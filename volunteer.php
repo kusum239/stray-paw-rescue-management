@@ -8,9 +8,6 @@ $user_id = $_SESSION["user_id"];
 $message = "";
 $error = "";
 
-
-/* CHECK EXISTING APPLICATION */
-
 $stmt = $conn->prepare("
     SELECT *
     FROM volunteer_application
@@ -20,56 +17,61 @@ $stmt = $conn->prepare("
 ");
 
 $stmt->bind_param("i", $user_id);
-
 $stmt->execute();
 
-$existing =
-$stmt->get_result();
-
-
-/* SUBMIT */
+$existing = $stmt->get_result()->fetch_assoc();
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
-    $skills =
-        trim($_POST["skills"]);
+    $skills = trim($_POST["skills"] ?? "");
+    $availability = $_POST["availability"] ?? "";
+    $experience = trim($_POST["experience"] ?? "");
 
-    $availability =
-        $_POST["availability"];
+    if ($skills === "" || $experience === "") {
 
-    $experience =
-        trim($_POST["experience"]);
+        $error = "Please fill in all required fields.";
 
+    } elseif ($existing) {
 
-    $stmt = $conn->prepare("
-        INSERT INTO volunteer_application
-        (
-            user_id,
-            skills,
-            availability,
-            experience
-        )
-        VALUES (?, ?, ?, ?)
-    ");
-
-    $stmt->bind_param(
-        "isss",
-        $user_id,
-        $skills,
-        $availability,
-        $experience
-    );
-
-    if ($stmt->execute()) {
-
-        $message =
-            "Your volunteer application has been submitted.";
+        $error = "You have already submitted a volunteer application.";
 
     } else {
 
-        $error =
-            "Unable to submit application.";
+        $stmt = $conn->prepare("
+            INSERT INTO volunteer_application
+            (
+                user_id,
+                skills,
+                availability,
+                experience
+            )
+            VALUES (?, ?, ?, ?)
+        ");
 
+        $stmt->bind_param(
+            "isss",
+            $user_id,
+            $skills,
+            $availability,
+            $experience
+        );
+
+        if ($stmt->execute()) {
+
+            $message = "Your volunteer application has been submitted.";
+
+            $existing = [
+                "skills" => $skills,
+                "availability" => $availability,
+                "experience" => $experience,
+                "status" => "Pending"
+            ];
+
+        } else {
+
+            $error = "Unable to submit application.";
+
+        }
     }
 }
 
@@ -77,16 +79,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
 
 <head>
 
-<title>
-Volunteer | Stray Paw
-</title>
+    <meta charset="UTF-8">
 
-<link rel="stylesheet"
-href="assets/css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Volunteer | Stray Paw</title>
+
+    <link rel="stylesheet" href="assets/css/style.css">
 
 </head>
 
@@ -96,97 +99,107 @@ href="assets/css/style.css">
 
 <main class="container page-section">
 
-<h1>
-Become a Volunteer
-</h1>
+    <h1>Become a Volunteer</h1>
 
-<p style="color:#78716c;margin-bottom:25px;">
+    <p style="color:#78716c; margin-bottom:25px;">
+        Interested users can apply to help rescue and care for stray animals.
+    </p>
 
-Interested users can apply to help rescue
-and care for stray animals.
+    <div class="form-card">
 
-</p>
+        <?php if ($message): ?>
 
+            <div class="success-message">
+                <?= htmlspecialchars($message) ?>
+            </div>
 
-<div class="form-card">
+        <?php endif; ?>
 
-<?php if ($message): ?>
+        <?php if ($error): ?>
 
-<p style="color:#708d68;margin-bottom:20px;">
-<?= htmlspecialchars($message) ?>
-</p>
+            <div class="error-message">
+                <?= htmlspecialchars($error) ?>
+            </div>
 
-<?php endif; ?>
+        <?php endif; ?>
 
+        <?php if ($existing && !$message): ?>
 
-<?php if ($error): ?>
+            <div class="application-status">
 
-<p style="color:#bd645c;margin-bottom:20px;">
-<?= htmlspecialchars($error) ?>
-</p>
+                <h3>Volunteer Application</h3>
 
-<?php endif; ?>
+                <p>
+                    You have already submitted a volunteer application.
+                </p>
 
+                <strong>
+                    Status:
+                    <?= htmlspecialchars($existing["status"] ?? "Pending") ?>
+                </strong>
 
-<form method="POST">
+            </div>
 
+        <?php else: ?>
 
-<div class="form-group">
+            <form method="POST">
 
-<label>Skills</label>
+                <div class="form-group">
 
-<textarea
-name="skills"
-placeholder="Animal handling, first aid, driving, etc."></textarea>
+                    <label for="skills">Skills</label>
 
-</div>
+                    <textarea
+                        id="skills"
+                        name="skills"
+                        placeholder="Animal handling, first aid, driving, etc."
+                        required
+                    ></textarea>
 
+                </div>
 
-<div class="form-group">
+                <div class="form-group">
 
-<label>Availability</label>
+                    <label for="availability">Availability</label>
 
-<select name="availability">
+                    <select
+                        id="availability"
+                        name="availability"
+                        required
+                    >
 
-<option value="Weekdays">
-Weekdays
-</option>
+                        <option value="Weekdays">Weekdays</option>
+                        <option value="Weekends">Weekends</option>
+                        <option value="Both">Both</option>
 
-<option value="Weekends">
-Weekends
-</option>
+                    </select>
 
-<option value="Both">
-Both
-</option>
+                </div>
 
-</select>
+                <div class="form-group">
 
-</div>
+                    <label for="experience">Previous Experience</label>
 
+                    <textarea
+                        id="experience"
+                        name="experience"
+                        placeholder="Describe any previous animal rescue or volunteer experience."
+                        required
+                    ></textarea>
 
-<div class="form-group">
+                </div>
 
-<label>Previous Experience</label>
+                <button
+                    class="btn"
+                    type="submit"
+                >
+                    Apply as Volunteer
+                </button>
 
-<textarea
-name="experience"
-placeholder="Describe any previous animal rescue or volunteer experience."></textarea>
+            </form>
 
-</div>
+        <?php endif; ?>
 
-
-<button
-class="btn"
-type="submit">
-
-Apply as Volunteer
-
-</button>
-
-</form>
-
-</div>
+    </div>
 
 </main>
 

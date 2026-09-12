@@ -1,4 +1,4 @@
-```php
+
 <?php
 
 // Start the admin session

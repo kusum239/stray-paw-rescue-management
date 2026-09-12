@@ -1,4 +1,3 @@
-
 <?php
 
 session_start();
@@ -16,11 +15,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $address = trim($_POST["address"]);
     $password = $_POST["password"];
     $confirm_password = $_POST["confirm_password"];
-
-
-    /* ==============================
-       VALIDATION
-    ============================== */
 
     if (
         empty($name) ||
@@ -47,10 +41,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     } else {
 
-        /* ==============================
-           CHECK EXISTING EMAIL
-        ============================== */
-
         $checkQuery = "
             SELECT user_id
             FROM users
@@ -69,26 +59,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         $result = mysqli_stmt_get_result($stmt);
 
-
         if (mysqli_num_rows($result) > 0) {
 
             $error = "An account with this email already exists.";
 
         } else {
 
-            /* ==============================
-               HASH PASSWORD
-            ============================== */
-
             $hashedPassword = password_hash(
                 $password,
                 PASSWORD_DEFAULT
             );
-
-
-            /* ==============================
-               INSERT USER
-            ============================== */
 
             $insertQuery = "
                 INSERT INTO users
@@ -117,13 +97,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $address
             );
 
-
             if (mysqli_stmt_execute($stmt)) {
-
-                /*
-                 * Registration successful.
-                 * Send user to login page.
-                 */
 
                 header("Location: login.php?registered=1");
                 exit();
@@ -143,7 +117,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 ?>
 
 <!DOCTYPE html>
-
 <html lang="en">
 
 <head>
@@ -161,8 +134,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         rel="stylesheet"
         href="assets/css/style.css"
     >
-
-    <!-- Poppins -->
 
     <link
         rel="preconnect"
@@ -182,16 +153,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 </head>
 
-
 <body>
 
-
-<!-- HEADER -->
-
 <?php include "includes/header.php"; ?>
-
-
-<!-- REGISTER -->
 
 <div class="auth-container">
 
@@ -204,9 +168,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             for animals in need.
         </p>
 
-
-        <!-- ERROR MESSAGE -->
-
         <?php if (!empty($error)): ?>
 
             <div class="form-alert error-alert">
@@ -214,9 +175,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             </div>
 
         <?php endif; ?>
-
-
-        <!-- SUCCESS MESSAGE -->
 
         <?php if (!empty($success)): ?>
 
@@ -226,15 +184,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         <?php endif; ?>
 
-
         <form
             method="POST"
             action=""
             id="registerForm"
         >
-
-
-            <!-- NAME -->
 
             <div class="form-group">
 
@@ -253,9 +207,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             </div>
 
-
-            <!-- EMAIL -->
-
             <div class="form-group">
 
                 <label for="email">
@@ -272,9 +223,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 >
 
             </div>
-
-
-            <!-- PHONE -->
 
             <div class="form-group">
 
@@ -293,9 +241,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             </div>
 
-
-            <!-- ADDRESS -->
-
             <div class="form-group">
 
                 <label for="address">
@@ -313,9 +258,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             </div>
 
-
-            <!-- PASSWORD -->
-
             <div class="form-group">
 
                 <label for="password">
@@ -331,9 +273,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 >
 
             </div>
-
-
-            <!-- CONFIRM PASSWORD -->
 
             <div class="form-group">
 
@@ -351,9 +290,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             </div>
 
-
-            <!-- REGISTER BUTTON -->
-
             <button
                 type="submit"
                 class="btn"
@@ -361,11 +297,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 Create Account
             </button>
 
-
         </form>
-
-
-        <!-- LOGIN LINK -->
 
         <p class="auth-bottom-text">
 
@@ -377,20 +309,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         </p>
 
-
     </div>
 
 </div>
 
-
-<!-- FOOTER -->
-
 <?php include "includes/footer.php"; ?>
-
 
 <script src="assets/js/script.js"></script>
 
 </body>
 
 </html>
-```
