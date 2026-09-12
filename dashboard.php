@@ -38,11 +38,14 @@ if (!$user) {
 
 $userName = $user["name"];
 
+
+/* TOTAL REPORTS */
+
 $totalReports = 0;
 
 $stmt = $conn->prepare("
     SELECT COUNT(*) AS total
-    FROM rescue_requests
+    FROM rescue_request
     WHERE user_id = ?
 ");
 
@@ -54,11 +57,14 @@ $row = $result->fetch_assoc();
 
 $totalReports = (int) ($row["total"] ?? 0);
 
+
+/* PENDING REPORTS */
+
 $pendingReports = 0;
 
 $stmt = $conn->prepare("
     SELECT COUNT(*) AS total
-    FROM rescue_requests
+    FROM rescue_request
     WHERE user_id = ?
     AND status = 'Pending'
 ");
@@ -71,11 +77,14 @@ $row = $result->fetch_assoc();
 
 $pendingReports = (int) ($row["total"] ?? 0);
 
+
+/* RESCUED REPORTS */
+
 $rescuedReports = 0;
 
 $stmt = $conn->prepare("
     SELECT COUNT(*) AS total
-    FROM rescue_requests
+    FROM rescue_request
     WHERE user_id = ?
     AND status IN ('Rescued', 'Completed')
 ");
@@ -87,6 +96,9 @@ $result = $stmt->get_result();
 $row = $result->fetch_assoc();
 
 $rescuedReports = (int) ($row["total"] ?? 0);
+
+
+/* VOLUNTEER STATUS */
 
 $volunteerStatus = "Not Applied";
 
@@ -109,15 +121,17 @@ if ($volunteer = $result->fetch_assoc()) {
 
 }
 
+
+/* RECENT REQUESTS */
+
 $stmt = $conn->prepare("
     SELECT
         request_id,
         animal_type,
-        breed,
         location,
-        report_date,
+        created_at,
         status
-    FROM rescue_requests
+    FROM rescue_request
     WHERE user_id = ?
     ORDER BY request_id DESC
     LIMIT 5
@@ -137,22 +151,26 @@ $requests = $stmt->get_result();
 
     <meta charset="UTF-8">
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
 
     <title>
         Dashboard | Stray Paw
     </title>
 
-    <link rel="stylesheet"
-          href="assets/css/style.css">
+    <link
+        rel="stylesheet"
+        href="assets/css/style.css">
 
-    <link rel="preconnect"
-          href="https://fonts.googleapis.com">
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com">
 
-    <link rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossorigin>
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin>
 
     <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
@@ -162,9 +180,54 @@ $requests = $stmt->get_result();
         rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
+    <style>
+
+        .action-buttons {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .delete-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 7px 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            color: #bd645c;
+            background: #fff1ef;
+            border: 1px solid #f3d2ce;
+            transition: 0.2s ease;
+        }
+
+        .delete-btn:hover {
+            background: #bd645c;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+
+            .action-buttons {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .action-buttons a {
+                text-align: center;
+            }
+
+        }
+
+    </style>
+
 </head>
 
 <body>
+
 
 <aside class="dashboard-sidebar">
 
@@ -182,10 +245,12 @@ $requests = $stmt->get_result();
 
     </div>
 
+
     <nav class="sidebar-nav">
 
-        <a href="dashboard.php"
-           class="active">
+        <a
+            href="dashboard.php"
+            class="active">
 
             <i class="fa-solid fa-chart-line"></i>
 
@@ -194,6 +259,7 @@ $requests = $stmt->get_result();
             </span>
 
         </a>
+
 
         <a href="report.php">
 
@@ -205,7 +271,8 @@ $requests = $stmt->get_result();
 
         </a>
 
-        <a href="track_request.php">
+
+        <a href="requests.php">
 
             <i class="fa-solid fa-location-dot"></i>
 
@@ -214,6 +281,7 @@ $requests = $stmt->get_result();
             </span>
 
         </a>
+
 
         <a href="volunteer.php">
 
@@ -224,6 +292,7 @@ $requests = $stmt->get_result();
             </span>
 
         </a>
+
 
         <a href="about.php">
 
@@ -237,6 +306,7 @@ $requests = $stmt->get_result();
 
     </nav>
 
+
     <div class="sidebar-bottom">
 
         <a href="#">
@@ -249,8 +319,10 @@ $requests = $stmt->get_result();
 
         </a>
 
-        <a href="logout.php"
-           class="logout-link">
+
+        <a
+            href="logout.php"
+            class="logout-link">
 
             <i class="fa-solid fa-right-from-bracket"></i>
 
@@ -264,14 +336,17 @@ $requests = $stmt->get_result();
 
 </aside>
 
+
 <main class="dashboard-main">
+
 
     <header class="dashboard-header">
 
         <div>
 
-            <button class="mobile-menu"
-                    type="button">
+            <button
+                class="mobile-menu"
+                type="button">
 
                 <i class="fa-solid fa-bars"></i>
 
@@ -283,6 +358,7 @@ $requests = $stmt->get_result();
 
         </div>
 
+
         <div class="header-user">
 
             <div class="notification">
@@ -290,6 +366,7 @@ $requests = $stmt->get_result();
                 <i class="fa-regular fa-bell"></i>
 
             </div>
+
 
             <div class="user-profile">
 
@@ -306,6 +383,7 @@ $requests = $stmt->get_result();
                     ?>
 
                 </div>
+
 
                 <div class="user-info">
 
@@ -327,6 +405,7 @@ $requests = $stmt->get_result();
 
                 </div>
 
+
                 <i class="fa-solid fa-chevron-down"></i>
 
             </div>
@@ -335,7 +414,9 @@ $requests = $stmt->get_result();
 
     </header>
 
+
     <section class="dashboard-content">
+
 
         <div class="welcome-section">
 
@@ -354,8 +435,10 @@ $requests = $stmt->get_result();
 
             </div>
 
-            <a href="report.php"
-               class="new-rescue-btn">
+
+            <a
+                href="report.php"
+                class="new-rescue-btn">
 
                 <i class="fa-solid fa-plus"></i>
 
@@ -365,7 +448,9 @@ $requests = $stmt->get_result();
 
         </div>
 
+
         <div class="stats-grid">
+
 
             <div class="stat-card">
 
@@ -374,6 +459,7 @@ $requests = $stmt->get_result();
                     <i class="fa-solid fa-file-lines"></i>
 
                 </div>
+
 
                 <div class="stat-details">
 
@@ -389,6 +475,7 @@ $requests = $stmt->get_result();
 
             </div>
 
+
             <div class="stat-card">
 
                 <div class="stat-icon pending-icon">
@@ -396,6 +483,7 @@ $requests = $stmt->get_result();
                     <i class="fa-regular fa-clock"></i>
 
                 </div>
+
 
                 <div class="stat-details">
 
@@ -411,6 +499,7 @@ $requests = $stmt->get_result();
 
             </div>
 
+
             <div class="stat-card">
 
                 <div class="stat-icon rescued-icon">
@@ -418,6 +507,7 @@ $requests = $stmt->get_result();
                     <i class="fa-solid fa-paw"></i>
 
                 </div>
+
 
                 <div class="stat-details">
 
@@ -433,6 +523,7 @@ $requests = $stmt->get_result();
 
             </div>
 
+
             <div class="stat-card volunteer-card">
 
                 <div class="stat-icon volunteer-icon">
@@ -440,6 +531,7 @@ $requests = $stmt->get_result();
                     <i class="fa-solid fa-hand-holding-heart"></i>
 
                 </div>
+
 
                 <div class="stat-details">
 
@@ -463,18 +555,23 @@ $requests = $stmt->get_result();
 
             </div>
 
+
         </div>
+
 
         <div class="quick-actions">
 
-            <a href="track_request.php"
-               class="quick-card">
+
+            <a
+                href="requests.php"
+                class="quick-card">
 
                 <div class="quick-icon">
 
                     <i class="fa-solid fa-list-check"></i>
 
                 </div>
+
 
                 <div>
 
@@ -488,18 +585,22 @@ $requests = $stmt->get_result();
 
                 </div>
 
+
                 <i class="fa-solid fa-arrow-right"></i>
 
             </a>
 
-            <a href="#"
-               class="quick-card">
+
+            <a
+                href="#"
+                class="quick-card">
 
                 <div class="quick-icon">
 
                     <i class="fa-solid fa-notes-medical"></i>
 
                 </div>
+
 
                 <div>
 
@@ -513,18 +614,22 @@ $requests = $stmt->get_result();
 
                 </div>
 
+
                 <i class="fa-solid fa-arrow-right"></i>
 
             </a>
 
-            <a href="#"
-               class="quick-card">
+
+            <a
+                href="#"
+                class="quick-card">
 
                 <div class="quick-icon">
 
                     <i class="fa-solid fa-house"></i>
 
                 </div>
+
 
                 <div>
 
@@ -538,13 +643,17 @@ $requests = $stmt->get_result();
 
                 </div>
 
+
                 <i class="fa-solid fa-arrow-right"></i>
 
             </a>
 
+
         </div>
 
+
         <div class="requests-section">
+
 
             <div class="section-heading">
 
@@ -560,7 +669,8 @@ $requests = $stmt->get_result();
 
                 </div>
 
-                <a href="track_request.php">
+
+                <a href="requests.php">
 
                     View All
 
@@ -569,6 +679,7 @@ $requests = $stmt->get_result();
                 </a>
 
             </div>
+
 
             <div class="table-wrapper">
 
@@ -606,27 +717,35 @@ $requests = $stmt->get_result();
 
                     </thead>
 
+
                     <tbody>
+
 
                     <?php if ($requests->num_rows > 0): ?>
 
+
                         <?php while ($row = $requests->fetch_assoc()): ?>
 
+
                             <tr>
+
 
                                 <td>
 
                                     <strong>
 
                                         #RQ-<?php
+
                                         echo htmlspecialchars(
                                             $row["request_id"]
                                         );
+
                                         ?>
 
                                     </strong>
 
                                 </td>
+
 
                                 <td>
 
@@ -661,6 +780,7 @@ $requests = $stmt->get_result();
 
                                         </div>
 
+
                                         <div>
 
                                             <strong>
@@ -675,17 +795,9 @@ $requests = $stmt->get_result();
 
                                             </strong>
 
+
                                             <small>
-
-                                                <?php
-
-                                                echo htmlspecialchars(
-                                                    $row["breed"]
-                                                    ?: "Unknown Breed"
-                                                );
-
-                                                ?>
-
+                                                Animal Report
                                             </small>
 
                                         </div>
@@ -693,6 +805,7 @@ $requests = $stmt->get_result();
                                     </div>
 
                                 </td>
+
 
                                 <td>
 
@@ -712,16 +825,17 @@ $requests = $stmt->get_result();
 
                                 </td>
 
+
                                 <td>
 
                                     <?php
 
-                                    if (!empty($row["report_date"])) {
+                                    if (!empty($row["created_at"])) {
 
                                         echo date(
                                             "M d, Y",
                                             strtotime(
-                                                $row["report_date"]
+                                                $row["created_at"]
                                             )
                                         );
 
@@ -734,6 +848,7 @@ $requests = $stmt->get_result();
                                     ?>
 
                                 </td>
+
 
                                 <td>
 
@@ -754,6 +869,7 @@ $requests = $stmt->get_result();
 
                                     ?>
 
+
                                     <span
                                         class="status-badge <?php echo htmlspecialchars($statusClass); ?>">
 
@@ -771,23 +887,42 @@ $requests = $stmt->get_result();
 
                                 </td>
 
+
                                 <td>
 
-                                    <a
-                                        href="track_request.php?id=<?php echo urlencode($row["request_id"]); ?>"
-                                        class="view-btn">
+                                    <div class="action-buttons">
 
-                                        View
+                                        <a
+                                            href="request_details.php?id=<?php echo urlencode($row["request_id"]); ?>"
+                                            class="view-btn">
 
-                                    </a>
+                                            View
+
+                                        </a>
+
+
+                                        <a
+                                            href="delete_request.php?id=<?php echo urlencode($row["request_id"]); ?>"
+                                            class="delete-btn"
+                                            onclick="return confirm('Are you sure you want to delete this rescue request?');">
+
+                                            Delete
+
+                                        </a>
+
+                                    </div>
 
                                 </td>
 
+
                             </tr>
+
 
                         <?php endwhile; ?>
 
+
                     <?php else: ?>
+
 
                         <tr>
 
@@ -804,6 +939,7 @@ $requests = $stmt->get_result();
 
                                 </p>
 
+
                                 <a href="report.php">
 
                                     Report an Animal
@@ -814,7 +950,9 @@ $requests = $stmt->get_result();
 
                         </tr>
 
+
                     <?php endif; ?>
+
 
                     </tbody>
 
@@ -824,9 +962,11 @@ $requests = $stmt->get_result();
 
         </div>
 
+
     </section>
 
 </main>
+
 
 <script src="assets/js/script.js"></script>
 
