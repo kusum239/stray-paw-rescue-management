@@ -5,10 +5,8 @@ session_start();
 require_once "config/db.php";
 
 if (!isset($_SESSION["user_id"])) {
-
     header("Location: login.php");
     exit();
-
 }
 
 $user_id = (int) $_SESSION["user_id"];
@@ -27,13 +25,11 @@ $userResult = $stmt->get_result();
 $user = $userResult->fetch_assoc();
 
 if (!$user) {
-
     session_unset();
     session_destroy();
 
     header("Location: login.php");
     exit();
-
 }
 
 $userName = $user["name"];
@@ -104,18 +100,14 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 if ($volunteer = $result->fetch_assoc()) {
-
     $volunteerStatus = $volunteer["status"];
-
 }
 
 $stmt = $conn->prepare("
     SELECT
         request_id,
         animal_type,
-        breed,
         location,
-        report_date,
         status
     FROM rescue_requests
     WHERE user_id = ?
@@ -140,9 +132,7 @@ $requests = $stmt->get_result();
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
 
-    <title>
-        Dashboard | Stray Paw
-    </title>
+    <title>Dashboard | Stray Paw</title>
 
     <link rel="stylesheet"
           href="assets/css/style.css">
@@ -591,10 +581,6 @@ $requests = $stmt->get_result();
                             </th>
 
                             <th>
-                                Date
-                            </th>
-
-                            <th>
                                 Status
                             </th>
 
@@ -619,9 +605,11 @@ $requests = $stmt->get_result();
                                     <strong>
 
                                         #RQ-<?php
+
                                         echo htmlspecialchars(
                                             $row["request_id"]
                                         );
+
                                         ?>
 
                                     </strong>
@@ -675,19 +663,6 @@ $requests = $stmt->get_result();
 
                                             </strong>
 
-                                            <small>
-
-                                                <?php
-
-                                                echo htmlspecialchars(
-                                                    $row["breed"]
-                                                    ?: "Unknown Breed"
-                                                );
-
-                                                ?>
-
-                                            </small>
-
                                         </div>
 
                                     </div>
@@ -709,29 +684,6 @@ $requests = $stmt->get_result();
                                         ?>
 
                                     </div>
-
-                                </td>
-
-                                <td>
-
-                                    <?php
-
-                                    if (!empty($row["report_date"])) {
-
-                                        echo date(
-                                            "M d, Y",
-                                            strtotime(
-                                                $row["report_date"]
-                                            )
-                                        );
-
-                                    } else {
-
-                                        echo "N/A";
-
-                                    }
-
-                                    ?>
 
                                 </td>
 
@@ -792,7 +744,7 @@ $requests = $stmt->get_result();
                         <tr>
 
                             <td
-                                colspan="6"
+                                colspan="5"
                                 class="no-data">
 
                                 <i class="fa-solid fa-paw"></i>
