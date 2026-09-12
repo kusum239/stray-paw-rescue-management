@@ -23,13 +23,11 @@ $existing = $stmt->get_result()->fetch_assoc();
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
-    $skills = trim($_POST["skills"] ?? "");
     $availability = $_POST["availability"] ?? "";
-    $experience = trim($_POST["experience"] ?? "");
 
-    if ($skills === "" || $experience === "") {
+    if ($availability === "") {
 
-        $error = "Please fill in all required fields.";
+        $error = "Please select your availability.";
 
     } elseif ($existing) {
 
@@ -41,19 +39,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             INSERT INTO volunteer_application
             (
                 user_id,
-                skills,
-                availability,
-                experience
+                availability
             )
-            VALUES (?, ?, ?, ?)
+            VALUES (?, ?)
         ");
 
         $stmt->bind_param(
-            "isss",
+            "is",
             $user_id,
-            $skills,
-            $availability,
-            $experience
+            $availability
         );
 
         if ($stmt->execute()) {
@@ -61,9 +55,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $message = "Your volunteer application has been submitted.";
 
             $existing = [
-                "skills" => $skills,
                 "availability" => $availability,
-                "experience" => $experience,
                 "status" => "Pending"
             ];
 
@@ -78,7 +70,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 ?>
 
 <!DOCTYPE html>
-
 <html lang="en">
 
 <head>
@@ -133,6 +124,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     You have already submitted a volunteer application.
                 </p>
 
+                <p>
+                    <strong>Availability:</strong>
+                    <?= htmlspecialchars($existing["availability"] ?? "") ?>
+                </p>
+
                 <strong>
                     Status:
                     <?= htmlspecialchars($existing["status"] ?? "Pending") ?>
@@ -146,19 +142,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                 <div class="form-group">
 
-                    <label for="skills">Skills</label>
-
-                    <textarea
-                        id="skills"
-                        name="skills"
-                        placeholder="Animal handling, first aid, driving, etc."
-                        required
-                    ></textarea>
-
-                </div>
-
-                <div class="form-group">
-
                     <label for="availability">Availability</label>
 
                     <select
@@ -167,24 +150,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         required
                     >
 
+                        <option value="">Select your availability</option>
                         <option value="Weekdays">Weekdays</option>
                         <option value="Weekends">Weekends</option>
                         <option value="Both">Both</option>
 
                     </select>
-
-                </div>
-
-                <div class="form-group">
-
-                    <label for="experience">Previous Experience</label>
-
-                    <textarea
-                        id="experience"
-                        name="experience"
-                        placeholder="Describe any previous animal rescue or volunteer experience."
-                        required
-                    ></textarea>
 
                 </div>
 

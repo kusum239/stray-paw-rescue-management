@@ -10,23 +10,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     $user_id = $_SESSION["user_id"];
 
-    $animal_type =
-        $_POST["animal_type"];
-
-    $condition_type =
-        $_POST["condition_type"];
-
-    $description =
-        trim($_POST["description"]);
-
-    $location =
-        trim($_POST["location"]);
-
-    $emergency =
-        $_POST["emergency"];
-
-
-    /* PHOTO */
+    $animal_type = $_POST["animal_type"] ?? "";
+    $condition_type = $_POST["condition_type"] ?? "";
+    $description = trim($_POST["description"] ?? "");
+    $location = trim($_POST["location"] ?? "");
+    $emergency = $_POST["emergency"] ?? "No";
 
     $photo_name = null;
 
@@ -42,35 +30,24 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             "webp"
         ];
 
-        $extension =
-            strtolower(
-                pathinfo(
-                    $_FILES["photo"]["name"],
-                    PATHINFO_EXTENSION
-                )
-            );
-
-        if (
-            in_array(
-                $extension,
-                $allowed_images
+        $extension = strtolower(
+            pathinfo(
+                $_FILES["photo"]["name"],
+                PATHINFO_EXTENSION
             )
-        ) {
+        );
+
+        if (in_array($extension, $allowed_images)) {
 
             $photo_name =
-                uniqid("photo_")
-                . "." . $extension;
+                uniqid("photo_") . "." . $extension;
 
             move_uploaded_file(
                 $_FILES["photo"]["tmp_name"],
-                "uploads/reports/"
-                . $photo_name
+                "uploads/reports/" . $photo_name
             );
         }
     }
-
-
-    /* VIDEO */
 
     $video_name = null;
 
@@ -85,41 +62,34 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             "mov"
         ];
 
-        $extension =
-            strtolower(
-                pathinfo(
-                    $_FILES["video"]["name"],
-                    PATHINFO_EXTENSION
-                )
-            );
-
-        if (
-            in_array(
-                $extension,
-                $allowed_videos
+        $extension = strtolower(
+            pathinfo(
+                $_FILES["video"]["name"],
+                PATHINFO_EXTENSION
             )
-        ) {
+        );
+
+        if (in_array($extension, $allowed_videos)) {
 
             $video_name =
-                uniqid("video_")
-                . "." . $extension;
+                uniqid("video_") . "." . $extension;
 
             move_uploaded_file(
                 $_FILES["video"]["tmp_name"],
-                "uploads/reports/"
-                . $video_name
+                "uploads/reports/" . $video_name
             );
         }
     }
 
-
     if (
+        empty($animal_type) ||
+        empty($condition_type) ||
         empty($description) ||
         empty($location)
     ) {
 
         $error =
-            "Description and location are required.";
+            "Please fill in all required fields.";
 
     } else {
 
@@ -152,8 +122,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         if ($stmt->execute()) {
 
-            $message =
-                "Your rescue request has been submitted successfully.";
+            header("Location: dashboard.php");
+            exit();
 
         } else {
 
@@ -168,9 +138,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
 
 <head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
 
 <title>
 Report an Animal | Stray Paw
@@ -198,17 +173,7 @@ coordinators. Please provide accurate details.
 
 </p>
 
-
 <div class="form-card">
-
-<?php if ($message): ?>
-
-<p style="color:#708d68;margin-bottom:20px;">
-<?= htmlspecialchars($message) ?>
-</p>
-
-<?php endif; ?>
-
 
 <?php if ($error): ?>
 
@@ -218,15 +183,15 @@ coordinators. Please provide accurate details.
 
 <?php endif; ?>
 
-
 <form
 method="POST"
 enctype="multipart/form-data">
 
-
 <div class="form-group">
 
-<label>Animal Type *</label>
+<label>
+Animal Type *
+</label>
 
 <select
 name="animal_type"
@@ -248,10 +213,11 @@ Cat
 
 </div>
 
-
 <div class="form-group">
 
-<label>Condition *</label>
+<label>
+Condition *
+</label>
 
 <select
 name="condition_type"
@@ -277,10 +243,11 @@ Abandoned
 
 </div>
 
-
 <div class="form-group">
 
-<label>Photo</label>
+<label>
+Photo
+</label>
 
 <input
 type="file"
@@ -289,10 +256,11 @@ accept="image/*">
 
 </div>
 
-
 <div class="form-group">
 
-<label>Video</label>
+<label>
+Video
+</label>
 
 <input
 type="file"
@@ -301,10 +269,11 @@ accept="video/*">
 
 </div>
 
-
 <div class="form-group">
 
-<label>Description *</label>
+<label>
+Description *
+</label>
 
 <textarea
 name="description"
@@ -313,10 +282,11 @@ required></textarea>
 
 </div>
 
-
 <div class="form-group">
 
-<label>Location *</label>
+<label>
+Location *
+</label>
 
 <input
 type="text"
@@ -326,12 +296,14 @@ required>
 
 </div>
 
-
 <div class="form-group">
 
-<label>Immediate Danger?</label>
+<label>
+Immediate Danger?
+</label>
 
-<select name="emergency">
+<select
+name="emergency">
 
 <option value="No">
 No
@@ -344,7 +316,6 @@ Yes, it's an emergency
 </select>
 
 </div>
-
 
 <button
 type="submit"
