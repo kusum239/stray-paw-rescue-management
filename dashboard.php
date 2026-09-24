@@ -11,6 +11,9 @@ if (!isset($_SESSION["user_id"])) {
 
 $user_id = (int) $_SESSION["user_id"];
 
+
+/* USER INFORMATION */
+
 $stmt = $conn->prepare("
     SELECT user_id, name, email
     FROM users
@@ -41,7 +44,7 @@ $totalReports = 0;
 
 $stmt = $conn->prepare("
     SELECT COUNT(*) AS total
-    FROM rescue_request
+    FROM rescue_requests
     WHERE user_id = ?
 ");
 
@@ -60,7 +63,7 @@ $pendingReports = 0;
 
 $stmt = $conn->prepare("
     SELECT COUNT(*) AS total
-    FROM rescue_request
+    FROM rescue_requests
     WHERE user_id = ?
     AND status = 'Pending'
 ");
@@ -80,7 +83,7 @@ $rescuedReports = 0;
 
 $stmt = $conn->prepare("
     SELECT COUNT(*) AS total
-    FROM rescue_request
+    FROM rescue_requests
     WHERE user_id = ?
     AND status IN ('Rescued', 'Completed')
 ");
@@ -125,7 +128,7 @@ $stmt = $conn->prepare("
         location,
         created_at,
         status
-    FROM rescue_request
+    FROM rescue_requests
     WHERE user_id = ?
     ORDER BY request_id DESC
     LIMIT 5

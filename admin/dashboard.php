@@ -1,30 +1,21 @@
-
 <?php
 
-// Start the admin session
 session_start();
 
-// Connect to the database
 require_once "../config/db.php";
 
-// Check if the admin is logged in
 if (!isset($_SESSION["admin_id"])) {
     header("Location: ../admin_login.php");
     exit();
 }
 
-// Get the logged-in admin's name
 $admin_name = $_SESSION["admin_name"] ?? "Admin";
 
-
-// Initialize dashboard statistics
 $total_requests = 0;
 $pending_requests = 0;
 $total_treatments = 0;
 $total_volunteers = 0;
 
-
-// Get total number of rescue requests
 $result = $conn->query("
     SELECT COUNT(*) AS total
     FROM rescue_requests
@@ -35,8 +26,6 @@ if ($result) {
     $total_requests = $row["total"];
 }
 
-
-// Get total number of pending rescue requests
 $result = $conn->query("
     SELECT COUNT(*) AS total
     FROM rescue_requests
@@ -48,8 +37,6 @@ if ($result) {
     $pending_requests = $row["total"];
 }
 
-
-// Get total number of treatment history records
 $result = $conn->query("
     SELECT COUNT(*) AS total
     FROM treatment_history
@@ -60,8 +47,6 @@ if ($result) {
     $total_treatments = $row["total"];
 }
 
-
-// Get total number of volunteer applications
 $result = $conn->query("
     SELECT COUNT(*) AS total
     FROM volunteer_application
@@ -72,14 +57,19 @@ if ($result) {
     $total_volunteers = $row["total"];
 }
 
-
-// Get the five most recent rescue requests
 $recent_requests = [];
 
 $result = $conn->query("
-    SELECT request_id, name, location, status, created_at
-    FROM rescue_requests
-    ORDER BY created_at DESC
+    SELECT
+        r.request_id,
+        u.name,
+        r.location,
+        r.status,
+        r.created_at
+    FROM rescue_requests r
+    LEFT JOIN users u
+        ON r.user_id = u.user_id
+    ORDER BY r.created_at DESC
     LIMIT 5
 ");
 
@@ -98,16 +88,19 @@ if ($result) {
 
     <meta charset="UTF-8">
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
 
     <title>Admin Dashboard | Stray Paw</title>
 
-    <!-- Main website stylesheet -->
-    <link rel="stylesheet" href="../assets/css/style.css">
+    <link
+        rel="stylesheet"
+        href="../assets/css/style.css">
 
-    <!-- Font Awesome icons -->
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
 </head>
 
@@ -115,16 +108,14 @@ if ($result) {
 
 <div class="admin-layout">
 
-
-    <!-- Sidebar navigation -->
     <aside class="admin-sidebar">
 
-
-        <!-- Stray Paw logo and brand -->
         <div class="sidebar-brand">
 
             <div class="sidebar-paw">
+
                 <i class="fa-solid fa-paw"></i>
+
             </div>
 
             <div>
@@ -137,68 +128,64 @@ if ($result) {
 
         </div>
 
-
-        <!-- Admin navigation links -->
         <nav class="admin-nav">
 
-
-            <!-- Dashboard -->
-            <a href="dashboard.php" class="active">
+            <a
+                href="dashboard.php"
+                class="active">
 
                 <i class="fa-solid fa-chart-line"></i>
 
-                <span>Dashboard</span>
+                <span>
+                    Dashboard
+                </span>
 
             </a>
 
-
-            <!-- Rescue requests -->
             <a href="requests.php">
 
                 <i class="fa-solid fa-file-circle-exclamation"></i>
 
-                <span>Rescue Requests</span>
+                <span>
+                    Rescue Requests
+                </span>
 
             </a>
 
-
-            <!-- Treatment history -->
             <a href="treatments.php">
 
                 <i class="fa-solid fa-kit-medical"></i>
 
-                <span>Treatment History</span>
+                <span>
+                    Treatment History
+                </span>
 
             </a>
 
-
-            <!-- Shelters -->
             <a href="shelters.php">
 
                 <i class="fa-solid fa-house"></i>
 
-                <span>Shelters</span>
+                <span>
+                    Shelters
+                </span>
 
             </a>
 
-
-            <!-- Volunteers -->
             <a href="volunteers.php">
 
                 <i class="fa-solid fa-hand-holding-heart"></i>
 
-                <span>Volunteers</span>
+                <span>
+                    Volunteers
+                </span>
 
             </a>
 
         </nav>
 
-
-        <!-- Bottom sidebar links -->
         <div class="sidebar-bottom">
 
-
-            <!-- Open public website -->
             <a href="../index.php">
 
                 <i class="fa-solid fa-globe"></i>
@@ -207,9 +194,9 @@ if ($result) {
 
             </a>
 
-
-            <!-- Logout -->
-            <a href="logout.php" class="logout-link">
+            <a
+                href="logout.php"
+                class="logout-link">
 
                 <i class="fa-solid fa-right-from-bracket"></i>
 
@@ -221,37 +208,30 @@ if ($result) {
 
     </aside>
 
-
-
-    <!-- Main dashboard area -->
     <main class="admin-main">
 
-
-        <!-- Dashboard top bar -->
         <header class="admin-topbar">
-
 
             <div>
 
-                <h1>Dashboard</h1>
+                <h1>
+                    Dashboard
+                </h1>
 
                 <p>
-                    Welcome back, <?= htmlspecialchars($admin_name) ?>!
+                    Welcome back,
+                    <?= htmlspecialchars($admin_name) ?>!
                 </p>
 
             </div>
 
-
-            <!-- Logged-in admin profile -->
             <div class="admin-profile">
-
 
                 <div class="admin-avatar">
 
                     <i class="fa-solid fa-user-shield"></i>
 
                 </div>
-
 
                 <div>
 
@@ -269,11 +249,7 @@ if ($result) {
 
         </header>
 
-
-
-        <!-- Dashboard welcome message -->
         <section class="dashboard-welcome">
-
 
             <div>
 
@@ -281,11 +257,9 @@ if ($result) {
                     STRAY PAW MANAGEMENT
                 </span>
 
-
                 <h2>
                     Every Paw Deserves a Second Chance 🐾
                 </h2>
-
 
                 <p>
                     Manage rescue requests, treatment history,
@@ -293,7 +267,6 @@ if ($result) {
                 </p>
 
             </div>
-
 
             <div class="welcome-icon">
 
@@ -303,22 +276,15 @@ if ($result) {
 
         </section>
 
-
-
-        <!-- Dashboard statistics -->
         <section class="dashboard-stats">
 
-
-            <!-- Total rescue requests -->
             <div class="stat-card">
-
 
                 <div class="stat-icon">
 
                     <i class="fa-solid fa-file-circle-exclamation"></i>
 
                 </div>
-
 
                 <div>
 
@@ -334,18 +300,13 @@ if ($result) {
 
             </div>
 
-
-
-            <!-- Pending rescue requests -->
             <div class="stat-card">
-
 
                 <div class="stat-icon pending">
 
                     <i class="fa-solid fa-clock"></i>
 
                 </div>
-
 
                 <div>
 
@@ -361,18 +322,13 @@ if ($result) {
 
             </div>
 
-
-
-            <!-- Treatment history records -->
             <div class="stat-card">
-
 
                 <div class="stat-icon rescued">
 
                     <i class="fa-solid fa-kit-medical"></i>
 
                 </div>
-
 
                 <div>
 
@@ -388,18 +344,13 @@ if ($result) {
 
             </div>
 
-
-
-            <!-- Volunteer applications -->
             <div class="stat-card">
-
 
                 <div class="stat-icon volunteers">
 
                     <i class="fa-solid fa-hand-holding-heart"></i>
 
                 </div>
-
 
                 <div>
 
@@ -417,18 +368,11 @@ if ($result) {
 
         </section>
 
-
-
-        <!-- Dashboard lower content -->
         <section class="dashboard-grid">
 
-
-            <!-- Recent rescue requests -->
             <div class="dashboard-card recent-card">
 
-
                 <div class="card-header">
-
 
                     <div>
 
@@ -442,54 +386,52 @@ if ($result) {
 
                     </div>
 
-
                     <a href="requests.php">
                         View All
                     </a>
 
                 </div>
 
-
-
-                <!-- Rescue requests table -->
                 <div class="table-wrapper">
 
-
                     <table>
-
 
                         <thead>
 
                             <tr>
 
-                                <th>ID</th>
+                                <th>
+                                    ID
+                                </th>
 
-                                <th>Reporter</th>
+                                <th>
+                                    Reporter
+                                </th>
 
-                                <th>Location</th>
+                                <th>
+                                    Location
+                                </th>
 
-                                <th>Status</th>
+                                <th>
+                                    Status
+                                </th>
 
-                                <th>Date</th>
+                                <th>
+                                    Date
+                                </th>
 
                             </tr>
 
                         </thead>
 
-
                         <tbody>
-
 
                         <?php if (count($recent_requests) > 0): ?>
 
-
                             <?php foreach ($recent_requests as $request): ?>
-
 
                                 <tr>
 
-
-                                    <!-- Rescue request ID -->
                                     <td>
 
                                         #<?= htmlspecialchars(
@@ -498,18 +440,14 @@ if ($result) {
 
                                     </td>
 
-
-                                    <!-- Person who submitted the report -->
                                     <td>
 
                                         <?= htmlspecialchars(
-                                            $request["name"]
+                                            $request["name"] ?? "Unknown User"
                                         ) ?>
 
                                     </td>
 
-
-                                    <!-- Report location -->
                                     <td>
 
                                         <?= htmlspecialchars(
@@ -518,21 +456,21 @@ if ($result) {
 
                                     </td>
 
-
-                                    <!-- Request status -->
                                     <td>
 
                                         <?php
 
-                                        // Convert status to a CSS class
-                                        $status = $request["status"];
+                                        $status =
+                                            $request["status"]
+                                            ?? "Pending";
 
-                                        $status_class = strtolower($status);
+                                        $status_class =
+                                            strtolower($status);
 
                                         ?>
 
-
-                                        <span class="status <?= htmlspecialchars($status_class) ?>">
+                                        <span
+                                            class="status <?= htmlspecialchars($status_class) ?>">
 
                                             <?= htmlspecialchars($status) ?>
 
@@ -540,31 +478,39 @@ if ($result) {
 
                                     </td>
 
-
-                                    <!-- Request submission date -->
                                     <td>
 
-                                        <?= date(
-                                            "M d, Y",
-                                            strtotime($request["created_at"])
-                                        ) ?>
+                                        <?php
+
+                                        if (!empty($request["created_at"])) {
+
+                                            echo date(
+                                                "M d, Y",
+                                                strtotime(
+                                                    $request["created_at"]
+                                                )
+                                            );
+
+                                        } else {
+
+                                            echo "N/A";
+
+                                        }
+
+                                        ?>
 
                                     </td>
 
-
                                 </tr>
-
 
                             <?php endforeach; ?>
 
-
                         <?php else: ?>
 
-
-                            <!-- Message shown when no requests exist -->
                             <tr>
 
-                                <td colspan="5"
+                                <td
+                                    colspan="5"
                                     class="empty-message">
 
                                     <i class="fa-solid fa-paw"></i>
@@ -575,9 +521,7 @@ if ($result) {
 
                             </tr>
 
-
                         <?php endif; ?>
-
 
                         </tbody>
 
@@ -587,14 +531,9 @@ if ($result) {
 
             </div>
 
-
-
-            <!-- Quick actions -->
             <div class="dashboard-card quick-card">
 
-
                 <div class="card-header">
-
 
                     <div>
 
@@ -610,22 +549,17 @@ if ($result) {
 
                 </div>
 
-
-
                 <div class="quick-actions">
 
-
-                    <!-- Rescue requests -->
-                    <a href="requests.php"
-                       class="quick-action">
-
+                    <a
+                        href="requests.php"
+                        class="quick-action">
 
                         <div class="quick-icon">
 
                             <i class="fa-solid fa-file-circle-exclamation"></i>
 
                         </div>
-
 
                         <div>
 
@@ -639,24 +573,19 @@ if ($result) {
 
                         </div>
 
-
                         <i class="fa-solid fa-chevron-right"></i>
 
                     </a>
 
-
-
-                    <!-- Treatment history -->
-                    <a href="treatments.php"
-                       class="quick-action">
-
+                    <a
+                        href="treatments.php"
+                        class="quick-action">
 
                         <div class="quick-icon">
 
                             <i class="fa-solid fa-kit-medical"></i>
 
                         </div>
-
 
                         <div>
 
@@ -670,24 +599,19 @@ if ($result) {
 
                         </div>
 
-
                         <i class="fa-solid fa-chevron-right"></i>
 
                     </a>
 
-
-
-                    <!-- Shelter information -->
-                    <a href="shelters.php"
-                       class="quick-action">
-
+                    <a
+                        href="shelters.php"
+                        class="quick-action">
 
                         <div class="quick-icon">
 
                             <i class="fa-solid fa-house"></i>
 
                         </div>
-
 
                         <div>
 
@@ -701,24 +625,19 @@ if ($result) {
 
                         </div>
 
-
                         <i class="fa-solid fa-chevron-right"></i>
 
                     </a>
 
-
-
-                    <!-- Volunteer applications -->
-                    <a href="volunteers.php"
-                       class="quick-action">
-
+                    <a
+                        href="volunteers.php"
+                        class="quick-action">
 
                         <div class="quick-icon">
 
                             <i class="fa-solid fa-heart"></i>
 
                         </div>
-
 
                         <div>
 
@@ -732,7 +651,6 @@ if ($result) {
 
                         </div>
 
-
                         <i class="fa-solid fa-chevron-right"></i>
 
                     </a>
@@ -743,7 +661,6 @@ if ($result) {
 
         </section>
 
-
     </main>
 
 </div>
@@ -751,4 +668,3 @@ if ($result) {
 </body>
 
 </html>
-```

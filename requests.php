@@ -1,3 +1,4 @@
+
 <?php
 
 require_once "includes/auth.php";
@@ -15,7 +16,7 @@ $stmt = $conn->prepare("
         photo,
         video,
         created_at
-    FROM rescue_request
+    FROM rescue_requests
     WHERE user_id = ?
     ORDER BY request_id DESC
 ");
@@ -34,28 +35,15 @@ $requests = $stmt->get_result();
 
     <meta charset="UTF-8">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>My Requests | Stray Paw</title>
 
-    <link
-        rel="stylesheet"
-        href="assets/css/style.css"
-    >
+    <link rel="stylesheet" href="assets/css/style.css">
 
-    <link
-        rel="preconnect"
-        href="https://fonts.googleapis.com"
-    >
+    <link rel="preconnect" href="https://fonts.googleapis.com">
 
-    <link
-        rel="preconnect"
-        href="https://fonts.gstatic.com"
-        crossorigin
-    >
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
     <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
@@ -73,17 +61,13 @@ $requests = $stmt->get_result();
 
 <?php include "includes/header.php"; ?>
 
-
 <main class="container page-section">
-
 
     <div class="requests-page-header">
 
         <div>
 
-            <h1>
-                My Rescue Requests
-            </h1>
+            <h1>My Rescue Requests</h1>
 
             <p>
                 View and manage the rescue requests you have submitted.
@@ -91,331 +75,182 @@ $requests = $stmt->get_result();
 
         </div>
 
-
-        <a
-            href="report.php"
-            class="btn"
-        >
-
+        <a href="report.php" class="btn">
             <i class="fa-solid fa-plus"></i>
-
             Report an Animal
-
         </a>
 
     </div>
 
-
     <?php if ($requests->num_rows > 0): ?>
-
 
         <div class="requests-list">
 
-
             <?php while ($request = $requests->fetch_assoc()): ?>
-
 
                 <?php
 
                 $status = $request["status"] ?? "Pending";
 
                 $statusClass = strtolower(
-                    str_replace(
-                        " ",
-                        "-",
-                        $status
-                    )
+                    str_replace(" ", "-", $status)
+                );
+
+                $animalType = strtolower(
+                    trim($request["animal_type"])
                 );
 
                 ?>
 
-
                 <div class="request-card">
-
 
                     <div class="request-card-top">
 
-
                         <div class="request-id">
 
-                            <span>
-                                Report ID
-                            </span>
+                            <span>Report ID</span>
 
                             <strong>
-                                #RQ-<?php
-                                echo htmlspecialchars(
-                                    $request["request_id"]
-                                );
-                                ?>
+                                #RQ-<?php echo htmlspecialchars($request["request_id"]); ?>
                             </strong>
 
                         </div>
 
-
-                        <span
-                            class="status-badge <?php echo htmlspecialchars($statusClass); ?>"
-                        >
+                        <span class="status-badge <?php echo htmlspecialchars($statusClass); ?>">
 
                             <span class="status-dot"></span>
 
-                            <?php
-                            echo htmlspecialchars($status);
-                            ?>
+                            <?php echo htmlspecialchars($status); ?>
 
                         </span>
 
-
                     </div>
-
 
                     <div class="request-card-content">
 
-
                         <div class="request-animal">
-
 
                             <div class="animal-icon">
 
                                 <?php
 
-                                $animalType = strtolower(
-                                    trim(
-                                        $request["animal_type"]
-                                    )
-                                );
-
                                 if ($animalType === "dog") {
-
                                     echo '<i class="fa-solid fa-dog"></i>';
-
                                 } elseif ($animalType === "cat") {
-
                                     echo '<i class="fa-solid fa-cat"></i>';
-
                                 } else {
-
                                     echo '<i class="fa-solid fa-paw"></i>';
-
                                 }
 
                                 ?>
 
                             </div>
 
-
                             <div>
 
                                 <h3>
-
-                                    <?php
-                                    echo htmlspecialchars(
-                                        $request["animal_type"]
-                                    );
-                                    ?>
-
+                                    <?php echo htmlspecialchars($request["animal_type"]); ?>
                                 </h3>
 
                                 <p>
-
-                                    <?php
-                                    echo htmlspecialchars(
-                                        $request["condition_type"]
-                                    );
-                                    ?>
-
+                                    <?php echo htmlspecialchars($request["condition_type"]); ?>
                                 </p>
 
                             </div>
 
-
                         </div>
-
 
                         <div class="request-info">
 
-
                             <div>
-
                                 <i class="fa-solid fa-location-dot"></i>
-
                                 <span>
-
-                                    <?php
-                                    echo htmlspecialchars(
-                                        $request["location"]
-                                    );
-                                    ?>
-
+                                    <?php echo htmlspecialchars($request["location"]); ?>
                                 </span>
-
                             </div>
 
-
                             <div>
-
                                 <i class="fa-regular fa-calendar"></i>
-
                                 <span>
-
                                     <?php
-
-                                    if (!empty($request["created_at"])) {
-
-                                        echo date(
-                                            "M d, Y",
-                                            strtotime(
-                                                $request["created_at"]
-                                            )
-                                        );
-
-                                    } else {
-
-                                        echo "N/A";
-
-                                    }
-
+                                    echo !empty($request["created_at"])
+                                        ? date("M d, Y", strtotime($request["created_at"]))
+                                        : "N/A";
                                     ?>
-
                                 </span>
-
                             </div>
 
-
                             <div>
-
                                 <i class="fa-solid fa-camera"></i>
-
                                 <span>
-
-                                    <?php
-
-                                    echo !empty(
-                                        $request["photo"]
-                                    )
-                                    ? "Photo attached"
-                                    : "No photo";
-
-                                    ?>
-
+                                    <?php echo !empty($request["photo"]) ? "Photo attached" : "No photo"; ?>
                                 </span>
-
                             </div>
-
 
                             <div>
-
                                 <i class="fa-solid fa-video"></i>
-
                                 <span>
-
-                                    <?php
-
-                                    echo !empty(
-                                        $request["video"]
-                                    )
-                                    ? "Video attached"
-                                    : "No video";
-
-                                    ?>
-
+                                    <?php echo !empty($request["video"]) ? "Video attached" : "No video"; ?>
                                 </span>
-
                             </div>
-
 
                         </div>
 
-
                     </div>
 
-
                     <div class="request-card-actions">
-
 
                         <a
                             href="request_details.php?id=<?php echo urlencode($request["request_id"]); ?>"
                             class="view-btn"
                         >
-
                             <i class="fa-solid fa-eye"></i>
-
                             View Details
-
                         </a>
-
 
                         <a
                             href="delete_request.php?id=<?php echo urlencode($request["request_id"]); ?>"
                             class="delete-btn"
                             onclick="return confirm('Are you sure you want to delete this rescue request?');"
                         >
-
                             <i class="fa-solid fa-trash"></i>
-
                             Delete
-
                         </a>
-
 
                     </div>
 
-
                 </div>
-
 
             <?php endwhile; ?>
 
-
         </div>
-
 
     <?php else: ?>
 
-
         <div class="empty-requests">
 
-
             <div class="empty-icon">
-
                 <i class="fa-solid fa-paw"></i>
-
             </div>
 
-
-            <h2>
-                No Rescue Requests Yet
-            </h2>
-
+            <h2>No Rescue Requests Yet</h2>
 
             <p>
                 You have not submitted any rescue requests.
             </p>
 
-
-            <a
-                href="report.php"
-                class="btn"
-            >
-
+            <a href="report.php" class="btn">
                 <i class="fa-solid fa-plus"></i>
-
                 Report an Animal
-
             </a>
-
 
         </div>
 
-
     <?php endif; ?>
-
 
 </main>
 
-
 <?php include "includes/footer.php"; ?>
-
 
 <style>
 
@@ -543,7 +378,6 @@ $requests = $stmt->get_result();
     border-radius: 30px;
     font-size: 12px;
     font-weight: 600;
-    white-space: nowrap;
 }
 
 .status-dot {
@@ -698,7 +532,7 @@ $requests = $stmt->get_result();
 
 </style>
 
-
 </body>
 
 </html>
+

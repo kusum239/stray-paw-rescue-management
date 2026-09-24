@@ -94,7 +94,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     } else {
 
         $stmt = $conn->prepare("
-            INSERT INTO rescue_request
+            INSERT INTO rescue_requests
             (
                 user_id,
                 animal_type,
@@ -103,9 +103,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 video,
                 description,
                 location,
-                emergency
+                emergency,
+                status,
+                created_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pending', NOW())
         ");
 
         $stmt->bind_param(
