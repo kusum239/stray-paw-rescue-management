@@ -8,12 +8,12 @@ if (!isset($_GET["id"])) {
     exit();
 }
 
-$user_id = $_SESSION["user_id"];
+$user_id = (int) $_SESSION["user_id"];
 $request_id = (int) $_GET["id"];
 
 $stmt = $conn->prepare("
     SELECT photo, video
-    FROM rescue_request
+    FROM rescue_requests
     WHERE request_id = ?
     AND user_id = ?
 ");
@@ -30,7 +30,6 @@ if (!$request) {
 }
 
 if (!empty($request["photo"])) {
-
     $photoPath = "uploads/reports/" . $request["photo"];
 
     if (file_exists($photoPath)) {
@@ -39,7 +38,6 @@ if (!empty($request["photo"])) {
 }
 
 if (!empty($request["video"])) {
-
     $videoPath = "uploads/reports/" . $request["video"];
 
     if (file_exists($videoPath)) {
@@ -48,7 +46,7 @@ if (!empty($request["video"])) {
 }
 
 $stmt = $conn->prepare("
-    DELETE FROM rescue_request
+    DELETE FROM rescue_requests
     WHERE request_id = ?
     AND user_id = ?
 ");
