@@ -16,71 +16,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $location = trim($_POST["location"] ?? "");
     $emergency = $_POST["emergency"] ?? "No";
 
-    $photo_name = null;
-
-    if (
-        isset($_FILES["photo"]) &&
-        $_FILES["photo"]["error"] === 0
-    ) {
-
-        $allowed_images = [
-            "jpg",
-            "jpeg",
-            "png",
-            "webp"
-        ];
-
-        $extension = strtolower(
-            pathinfo(
-                $_FILES["photo"]["name"],
-                PATHINFO_EXTENSION
-            )
-        );
-
-        if (in_array($extension, $allowed_images)) {
-
-            $photo_name =
-                uniqid("photo_") . "." . $extension;
-
-            move_uploaded_file(
-                $_FILES["photo"]["tmp_name"],
-                "uploads/reports/" . $photo_name
-            );
-        }
-    }
-
-    $video_name = null;
-
-    if (
-        isset($_FILES["video"]) &&
-        $_FILES["video"]["error"] === 0
-    ) {
-
-        $allowed_videos = [
-            "mp4",
-            "webm",
-            "mov"
-        ];
-
-        $extension = strtolower(
-            pathinfo(
-                $_FILES["video"]["name"],
-                PATHINFO_EXTENSION
-            )
-        );
-
-        if (in_array($extension, $allowed_videos)) {
-
-            $video_name =
-                uniqid("video_") . "." . $extension;
-
-            move_uploaded_file(
-                $_FILES["video"]["tmp_name"],
-                "uploads/reports/" . $video_name
-            );
-        }
-    }
-
     if (
         empty($animal_type) ||
         empty($condition_type) ||
@@ -88,10 +23,83 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         empty($location)
     ) {
 
-        $error =
-            "Please fill in all required fields.";
+        $error = "Please fill in all required fields.";
 
     } else {
+
+        $upload_dir = "uploads/reports/";
+
+        if (!is_dir($upload_dir)) {
+            mkdir($upload_dir, 0777, true);
+        }
+
+        $photo_path = null;
+        $video_path = null;
+
+        if (
+            isset($_FILES["photo"]) &&
+            $_FILES["photo"]["error"] === UPLOAD_ERR_OK
+        ) {
+
+            $allowed_images = [
+                "jpg",
+                "jpeg",
+                "png",
+                "webp"
+            ];
+
+            $extension = strtolower(
+                pathinfo(
+                    $_FILES["photo"]["name"],
+                    PATHINFO_EXTENSION
+                )
+            );
+
+            if (in_array($extension, $allowed_images)) {
+
+                $photo_name = uniqid("photo_", true) . "." . $extension;
+                $photo_path = $upload_dir . $photo_name;
+
+                if (!move_uploaded_file(
+                    $_FILES["photo"]["tmp_name"],
+                    $photo_path
+                )) {
+                    $photo_path = null;
+                }
+            }
+        }
+
+        if (
+            isset($_FILES["video"]) &&
+            $_FILES["video"]["error"] === UPLOAD_ERR_OK
+        ) {
+
+            $allowed_videos = [
+                "mp4",
+                "webm",
+                "mov"
+            ];
+
+            $extension = strtolower(
+                pathinfo(
+                    $_FILES["video"]["name"],
+                    PATHINFO_EXTENSION
+                )
+            );
+
+            if (in_array($extension, $allowed_videos)) {
+
+                $video_name = uniqid("video_", true) . "." . $extension;
+                $video_path = $upload_dir . $video_name;
+
+                if (!move_uploaded_file(
+                    $_FILES["video"]["tmp_name"],
+                    $video_path
+                )) {
+                    $video_path = null;
+                }
+            }
+        }
 
         $stmt = $conn->prepare("
             INSERT INTO rescue_requests
@@ -115,8 +123,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $user_id,
             $animal_type,
             $condition_type,
-            $photo_name,
-            $video_name,
+            $photo_path,
+            $video_path,
             $description,
             $location,
             $emergency
@@ -129,9 +137,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         } else {
 
-            $error =
-                "Unable to submit the request.";
-
+            $error = "Unable to submit the request.";
         }
     }
 }
@@ -146,15 +152,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 <meta charset="UTF-8">
 
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>
-Report an Animal | Stray Paw
-</title>
+<title>Report an Animal | Stray Paw</title>
 
-<link rel="stylesheet"
-href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css">
 
 </head>
 
@@ -169,10 +171,7 @@ Report a Stray or Injured Animal
 </h1>
 
 <p style="color:#78716c;margin-bottom:25px;">
-
-Your report goes directly to our rescue
-coordinators. Please provide accurate details.
-
+Your report goes directly to our rescue coordinators. Please provide accurate details.
 </p>
 
 <div class="form-card">
@@ -185,9 +184,7 @@ coordinators. Please provide accurate details.
 
 <?php endif; ?>
 
-<form
-method="POST"
-enctype="multipart/form-data">
+<form method="POST" enctype="multipart/form-data">
 
 <div class="form-group">
 
@@ -195,9 +192,7 @@ enctype="multipart/form-data">
 Animal Type *
 </label>
 
-<select
-name="animal_type"
-required>
+<select name="animal_type" required>
 
 <option value="">
 Select animal
@@ -221,9 +216,7 @@ Cat
 Condition *
 </label>
 
-<select
-name="condition_type"
-required>
+<select name="condition_type" required>
 
 <option value="">
 Select condition
@@ -304,8 +297,7 @@ required>
 Immediate Danger?
 </label>
 
-<select
-name="emergency">
+<select name="emergency">
 
 <option value="No">
 No
@@ -319,12 +311,8 @@ Yes, it's an emergency
 
 </div>
 
-<button
-type="submit"
-class="btn">
-
+<button type="submit" class="btn">
 Submit Rescue Request
-
 </button>
 
 </form>
