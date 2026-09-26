@@ -15,9 +15,55 @@ if (!isset($_SESSION['admin_id'])) {
 
 require_once "../config/db.php";
 
-$request_id = intval($_GET['id'] ?? 0);
+$request_id = intval($_GET['id'] ?? $_POST['request_id'] ?? 0);
+$request_data = null;
+$volunteers = [];
 
-$request = null;
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["update_request"])) {
+
+    $request_id = intval($_POST["request_id"] ?? 0);
+    $status = trim($_POST["status"] ?? "");
+    $volunteer_id = $_POST["assigned_volunteer_id"] ?? "";
+
+    $allowed_status = [
+        "Pending",
+        "In Progress",
+        "Rescued",
+        "Completed",
+        "Rejected"
+    ];
+
+    if ($request_id > 0 && in_array($status, $allowed_status, true)) {
+
+        if ($volunteer_id === "" || $volunteer_id === "0") {
+            $volunteer_id = null;
+        } else {
+            $volunteer_id = intval($volunteer_id);
+        }
+
+        $stmt = $conn->prepare("
+            UPDATE rescue_requests
+            SET status = ?, assigned_volunteer_id = ?
+            WHERE request_id = ?
+        ");
+
+        if ($stmt) {
+            $stmt->bind_param(
+                "sii",
+                $status,
+                $volunteer_id,
+                $request_id
+            );
+
+            $stmt->execute();
+            $stmt->close();
+        }
+    }
+
+    header("Location: request_details.php?id=" . $request_id);
+    exit();
+}
+
 
 if ($request_id > 0) {
 
@@ -28,13 +74,36 @@ if ($request_id > 0) {
         LIMIT 1
     ");
 
-    $stmt->bind_param("i", $request_id);
+    if ($stmt) {
+        $stmt->bind_param("i", $request_id);
+        $stmt->execute();
 
+        $request_data = $stmt->get_result()->fetch_assoc();
+
+        $stmt->close();
+    }
+}
+
+
+$stmt = $conn->prepare("
+    SELECT
+        v.volunteer_id,
+        v.user_id,
+        u.name,
+        u.email
+    FROM volunteers v
+    INNER JOIN users u ON v.user_id = u.user_id
+    WHERE v.status IN ('Active', 'Approved')
+    ORDER BY u.name ASC
+");
+
+if ($stmt) {
     $stmt->execute();
-
     $result = $stmt->get_result();
 
-    $request = $result->fetch_assoc();
+    while ($row = $result->fetch_assoc()) {
+        $volunteers[] = $row;
+    }
 
     $stmt->close();
 }
@@ -46,139 +115,161 @@ if ($request_id > 0) {
 
 <head>
 
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Request Details</title>
+<title>Request Details - Admin</title>
 
-    <style>
+<style>
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-        }
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
 
-        body {
-            background: #f4f7f6;
-            padding: 25px;
-        }
+body {
+    background-color: #f4f7f6;
+    padding: 25px;
+}
 
-        .nav-bar {
-            background: #1b4d3e;
-            color: white;
-            padding: 15px 25px;
-            border-radius: 8px;
-            margin-bottom: 25px;
+.nav-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #1b4d3e;
+    padding: 15px 25px;
+    border-radius: 8px;
+    margin-bottom: 25px;
+    color: white;
+}
 
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+.nav-bar a {
+    color: #cfdfda;
+    text-decoration: none;
+    font-weight: 600;
+    margin-left: 15px;
+}
 
-        .nav-bar a {
-            color: #cfdfda;
-            text-decoration: none;
-            margin-left: 15px;
-            font-weight: bold;
-        }
+.card {
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    max-width: 800px;
+    margin: 0 auto;
+}
 
-        .card {
-            background: white;
-            max-width: 900px;
-            margin: auto;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-        }
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #e1e8e5;
+    padding-bottom: 10px;
+}
 
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+.detail-row {
+    display: flex;
+    margin-bottom: 15px;
+    font-size: 0.95rem;
+}
 
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 20px;
-            margin-bottom: 20px;
-        }
+.detail-label {
+    font-weight: bold;
+    width: 180px;
+    color: #34495e;
+}
 
-        .header h2 {
-            color: #1b4d3e;
-        }
+.detail-value {
+    color: #2c3e50;
+    flex: 1;
+}
 
-        .back-btn {
-            background: #6c757d;
-            color: white;
-            text-decoration: none;
-            padding: 8px 14px;
-            border-radius: 5px;
-        }
+.request-img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin-top: 10px;
+    border: 1px solid #ddd;
+}
 
-        .detail-row {
-            display: grid;
-            grid-template-columns: 180px 1fr;
-            gap: 20px;
+.request-video {
+    max-width: 100%;
+    margin-top: 10px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
 
-            padding: 14px 0;
-            border-bottom: 1px solid #eee;
-        }
+.back-btn {
+    background: #6c757d;
+    color: white;
+    text-decoration: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
 
-        .label {
-            font-weight: bold;
-            color: #34495e;
-        }
+.media-error {
+    color: #bd645c;
+    margin-top: 8px;
+}
 
-        .value {
-            color: #333;
-            line-height: 1.6;
-        }
+.update-card {
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid #e1e8e5;
+}
 
-        .status {
-            display: inline-block;
-            background: #fff3cd;
-            color: #856404;
-            padding: 6px 12px;
-            border-radius: 5px;
-            font-weight: bold;
-        }
+.update-card h3 {
+    margin-bottom: 18px;
+    color: #1b4d3e;
+}
 
-        .media-section {
-            margin-top: 30px;
-        }
+.form-group {
+    margin-bottom: 18px;
+}
 
-        .media-section h3 {
-            color: #1b4d3e;
-            margin-bottom: 15px;
-        }
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 7px;
+    color: #34495e;
+}
 
-        .photo {
-            max-width: 500px;
-            width: 100%;
-            border-radius: 10px;
-            border: 1px solid #ddd;
-        }
+.form-group select {
+    width: 100%;
+    padding: 11px;
+    border: 1px solid #ccd6d2;
+    border-radius: 6px;
+    background: white;
+    font-size: 0.95rem;
+}
 
-        video {
-            max-width: 700px;
-            width: 100%;
-            border-radius: 10px;
-            background: black;
-        }
+.update-btn {
+    background: #1b4d3e;
+    color: white;
+    border: none;
+    padding: 11px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
 
-        .no-media {
-            color: #888;
-            font-style: italic;
-        }
+.update-btn:hover {
+    background: #143b30;
+}
 
-        .not-found {
-            text-align: center;
-            padding: 40px;
-        }
+.no-volunteer {
+    color: #777;
+    font-size: 0.9rem;
+    margin-top: 5px;
+}
 
-    </style>
+</style>
 
 </head>
 
@@ -186,21 +277,31 @@ if ($request_id > 0) {
 
 <div class="nav-bar">
 
-    <strong>🐾 Stray Paw Admin</strong>
+    <div style="font-size: 1.2rem; font-weight: bold;">
+        🐾 Stray Paw Admin
+    </div>
 
     <div>
 
-        <a href="reports.php">Dashboard</a>
+        <a href="reports.php">
+            Dashboard
+        </a>
 
-        <a href="requests.php">Requests</a>
+        <a
+            href="requests.php"
+            style="color:white; text-decoration: underline;"
+        >
+            Requests
+        </a>
 
-        <a href="animals.php">Animals</a>
+        <a href="animals.php">
+            Animals
+        </a>
 
-        <a href="shelters.php">Shelters</a>
-
-        <a href="volunteers.php">Volunteers</a>
-
-        <a href="../logout.php">
+        <a
+            href="../logout.php"
+            style="color: #ff9999;"
+        >
             Logout
         </a>
 
@@ -211,211 +312,322 @@ if ($request_id > 0) {
 
 <div class="card">
 
-<?php if ($request): ?>
-
-    <div class="header">
+    <div class="card-header">
 
         <h2>
-            Rescue Request #<?php echo $request['request_id']; ?>
+            Rescue Request Details #<?= htmlspecialchars($request_id) ?>
         </h2>
 
-        <a href="requests.php" class="back-btn">
-            ← Back
-        </a>
-
-    </div>
-
-
-    <div class="detail-row">
-
-        <div class="label">
-            User ID
-        </div>
-
-        <div class="value">
-            <?php echo htmlspecialchars($request['user_id']); ?>
-        </div>
-
-    </div>
-
-
-    <div class="detail-row">
-
-        <div class="label">
-            Animal Type
-        </div>
-
-        <div class="value">
-            <?php echo htmlspecialchars($request['animal_type']); ?>
-        </div>
-
-    </div>
-
-
-    <div class="detail-row">
-
-        <div class="label">
-            Condition
-        </div>
-
-        <div class="value">
-            <?php echo htmlspecialchars($request['animal_condition']); ?>
-        </div>
-
-    </div>
-
-
-    <div class="detail-row">
-
-        <div class="label">
-            Location
-        </div>
-
-        <div class="value">
-            <?php echo nl2br(
-                htmlspecialchars($request['location'])
-            ); ?>
-        </div>
-
-    </div>
-
-
-    <div class="detail-row">
-
-        <div class="label">
-            Description
-        </div>
-
-        <div class="value">
-            <?php echo nl2br(
-                htmlspecialchars($request['description'])
-            ); ?>
-        </div>
-
-    </div>
-
-
-    <div class="detail-row">
-
-        <div class="label">
-            Status
-        </div>
-
-        <div class="value">
-
-            <span class="status">
-
-                <?php
-                echo htmlspecialchars(
-                    $request['status']
-                );
-                ?>
-
-            </span>
-
-        </div>
-
-    </div>
-
-
-    <div class="detail-row">
-
-        <div class="label">
-            Submitted At
-        </div>
-
-        <div class="value">
-            <?php echo htmlspecialchars(
-                $request['created_at']
-            ); ?>
-        </div>
-
-    </div>
-
-
-    <!-- PHOTO -->
-
-    <div class="media-section">
-
-        <h3>📷 Animal Photo</h3>
-
-        <?php if (!empty($request['image'])): ?>
-
-            <img
-                class="photo"
-                src="../uploads/reports/<?php
-                    echo htmlspecialchars(
-                        basename($request['image'])
-                    );
-                ?>"
-                alt="Animal Photo"
-            >
-
-        <?php else: ?>
-
-            <p class="no-media">
-                No photo submitted.
-            </p>
-
-        <?php endif; ?>
-
-    </div>
-
-
-    <!-- VIDEO -->
-
-    <div class="media-section">
-
-        <h3>🎥 Animal Video</h3>
-
-        <?php if (!empty($request['video'])): ?>
-
-            <video controls>
-
-                <source
-                    src="../uploads/reports/<?php
-                        echo htmlspecialchars(
-                            basename($request['video'])
-                        );
-                    ?>"
-                    type="video/mp4"
-                >
-
-                Your browser does not support video.
-
-            </video>
-
-        <?php else: ?>
-
-            <p class="no-media">
-                No video submitted.
-            </p>
-
-        <?php endif; ?>
-
-    </div>
-
-
-<?php else: ?>
-
-    <div class="not-found">
-
-        <h2>Request Not Found</h2>
-
-        <p>
-            No rescue request exists with ID
-            #<?php echo $request_id; ?>
-        </p>
-
-        <br>
-
-        <a href="requests.php">
+        <a
+            href="requests.php"
+            class="back-btn"
+        >
             ← Back to Requests
         </a>
 
     </div>
 
-<?php endif; ?>
+
+    <?php if ($request_data): ?>
+
+
+        <div class="detail-row">
+
+            <div class="detail-label">
+                Animal Type:
+            </div>
+
+            <div class="detail-value">
+                <?= htmlspecialchars($request_data['animal_type'] ?? 'N/A') ?>
+            </div>
+
+        </div>
+
+
+        <div class="detail-row">
+
+            <div class="detail-label">
+                Condition:
+            </div>
+
+            <div class="detail-value">
+                <?= htmlspecialchars($request_data['condition_type'] ?? 'N/A') ?>
+            </div>
+
+        </div>
+
+
+        <div class="detail-row">
+
+            <div class="detail-label">
+                Location:
+            </div>
+
+            <div class="detail-value">
+                <?= htmlspecialchars($request_data['location'] ?? 'N/A') ?>
+            </div>
+
+        </div>
+
+
+        <div class="detail-row">
+
+            <div class="detail-label">
+                Emergency:
+            </div>
+
+            <div class="detail-value">
+                <?= htmlspecialchars($request_data['emergency'] ?? 'No') ?>
+            </div>
+
+        </div>
+
+
+        <div class="detail-row">
+
+            <div class="detail-label">
+                Status:
+            </div>
+
+            <div class="detail-value">
+
+                <strong>
+                    <?= htmlspecialchars($request_data['status'] ?? 'Pending') ?>
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <div class="detail-row">
+
+            <div class="detail-label">
+                Description:
+            </div>
+
+            <div class="detail-value">
+
+                <?= nl2br(
+                    htmlspecialchars(
+                        $request_data['description']
+                        ?? 'No description provided.'
+                    )
+                ) ?>
+
+            </div>
+
+        </div>
+
+
+        <?php if (!empty($request_data['photo'])): ?>
+
+            <div class="detail-row">
+
+                <div class="detail-label">
+                    Photo Evidence:
+                </div>
+
+                <div class="detail-value">
+
+                    <img
+                        src="../uploads/reports/<?= htmlspecialchars(
+                            basename($request_data['photo'])
+                        ) ?>"
+                        class="request-img"
+                        alt="Request Photo"
+                        onerror="this.style.display='none'; document.getElementById('photo-error').style.display='block';"
+                    >
+
+                    <p
+                        id="photo-error"
+                        class="media-error"
+                        style="display:none;"
+                    >
+                        Photo could not be loaded.
+                    </p>
+
+                </div>
+
+            </div>
+
+        <?php endif; ?>
+
+
+        <?php if (!empty($request_data['video'])): ?>
+
+            <div class="detail-row">
+
+                <div class="detail-label">
+                    Video Evidence:
+                </div>
+
+                <div class="detail-value">
+
+                    <video
+                        class="request-video"
+                        controls
+                    >
+
+                        <source
+                            src="../uploads/reports/<?= htmlspecialchars(
+                                basename($request_data['video'])
+                            ) ?>"
+                        >
+
+                        Your browser does not support video playback.
+
+                    </video>
+
+                </div>
+
+            </div>
+
+        <?php endif; ?>
+
+
+        <div class="update-card">
+
+            <h3>
+                Update Rescue Request
+            </h3>
+
+            <form method="POST">
+
+                <input
+                    type="hidden"
+                    name="request_id"
+                    value="<?= htmlspecialchars($request_id) ?>"
+                >
+
+                <div class="form-group">
+
+                    <label for="status">
+                        Request Status
+                    </label>
+
+                    <select
+                        name="status"
+                        id="status"
+                        required
+                    >
+
+                        <?php
+                        $current_status = $request_data['status'] ?? 'Pending';
+                        ?>
+
+                        <option
+                            value="Pending"
+                            <?= $current_status === 'Pending' ? 'selected' : '' ?>
+                        >
+                            Pending
+                        </option>
+
+                        <option
+                            value="In Progress"
+                            <?= $current_status === 'In Progress' ? 'selected' : '' ?>
+                        >
+                            In Progress
+                        </option>
+
+                        <option
+                            value="Rescued"
+                            <?= $current_status === 'Rescued' ? 'selected' : '' ?>
+                        >
+                            Rescued
+                        </option>
+
+                        <option
+                            value="Completed"
+                            <?= $current_status === 'Completed' ? 'selected' : '' ?>
+                        >
+                            Completed
+                        </option>
+
+                        <option
+                            value="Rejected"
+                            <?= $current_status === 'Rejected' ? 'selected' : '' ?>
+                        >
+                            Rejected
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="assigned_volunteer_id">
+                        Assign Volunteer
+                    </label>
+
+                    <select
+                        name="assigned_volunteer_id"
+                        id="assigned_volunteer_id"
+                    >
+
+                        <option value="0">
+                            -- No Volunteer Assigned --
+                        </option>
+
+                        <?php foreach ($volunteers as $volunteer): ?>
+
+                            <option
+                                value="<?= htmlspecialchars($volunteer['volunteer_id']) ?>"
+                                <?= (
+                                    isset($request_data['assigned_volunteer_id']) &&
+                                    $request_data['assigned_volunteer_id'] == $volunteer['volunteer_id']
+                                ) ? 'selected' : '' ?>
+                            >
+
+                                <?= htmlspecialchars($volunteer['name']) ?>
+
+                                <?php if (!empty($volunteer['email'])): ?>
+                                    - <?= htmlspecialchars($volunteer['email']) ?>
+                                <?php endif; ?>
+
+                            </option>
+
+                        <?php endforeach; ?>
+
+                    </select>
+
+                    <?php if (empty($volunteers)): ?>
+
+                        <p class="no-volunteer">
+                            No active or approved volunteers are available.
+                        </p>
+
+                    <?php endif; ?>
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    name="update_request"
+                    class="update-btn"
+                >
+                    Update Request
+                </button>
+
+            </form>
+
+        </div>
+
+
+    <?php else: ?>
+
+        <p style="
+            text-align:center;
+            color:#7f8c8d;
+            padding:20px;
+        ">
+            Rescue request record not found.
+        </p>
+
+    <?php endif; ?>
 
 </div>
 

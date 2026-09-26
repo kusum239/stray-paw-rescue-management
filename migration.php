@@ -12,8 +12,6 @@ if ($conn->connect_error) {
 
 $conn->set_charset("utf8mb4");
 
-/* Create database */
-
 $conn->query("
     CREATE DATABASE IF NOT EXISTS stray_paw_management
 ");
@@ -77,10 +75,10 @@ CREATE TABLE IF NOT EXISTS volunteer_application (
 ");
 
 
-/* VOLUNTEER */
+/* VOLUNTEERS */
 
 $conn->query("
-CREATE TABLE IF NOT EXISTS volunteer (
+CREATE TABLE IF NOT EXISTS volunteers (
     volunteer_id INT AUTO_INCREMENT PRIMARY KEY,
 
     user_id INT NOT NULL UNIQUE,
@@ -105,18 +103,18 @@ CREATE TABLE IF NOT EXISTS volunteer (
 ");
 
 
-/* RESCUE REQUEST */
+/* RESCUE REQUESTS */
 
 $conn->query("
-CREATE TABLE IF NOT EXISTS rescue_request (
+CREATE TABLE IF NOT EXISTS rescue_requests (
 
     request_id INT AUTO_INCREMENT PRIMARY KEY,
 
     user_id INT NOT NULL,
 
-    admin_id INT NULL,
+    assigned_admin_id INT NULL,
 
-    volunteer_id INT NULL,
+    assigned_volunteer_id INT NULL,
 
     animal_type ENUM(
         'Dog',
@@ -162,12 +160,12 @@ CREATE TABLE IF NOT EXISTS rescue_request (
         REFERENCES users(user_id)
         ON DELETE CASCADE,
 
-    FOREIGN KEY (admin_id)
+    FOREIGN KEY (assigned_admin_id)
         REFERENCES admin(admin_id)
         ON DELETE SET NULL,
 
-    FOREIGN KEY (volunteer_id)
-        REFERENCES volunteer(volunteer_id)
+    FOREIGN KEY (assigned_volunteer_id)
+        REFERENCES volunteers(volunteer_id)
         ON DELETE SET NULL
 
 ) ENGINE=InnoDB
@@ -216,14 +214,14 @@ CREATE TABLE IF NOT EXISTS rescued_animal (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (request_id)
-        REFERENCES rescue_request(request_id)
+        REFERENCES rescue_requests(request_id)
         ON DELETE CASCADE
 
 ) ENGINE=InnoDB
 ");
 
 
-/* TREATMENT */
+/* TREATMENT HISTORY */
 
 $conn->query("
 CREATE TABLE IF NOT EXISTS treatment_history (
@@ -262,10 +260,10 @@ CREATE TABLE IF NOT EXISTS treatment_history (
 ");
 
 
-/* SHELTER */
+/* SHELTERS */
 
 $conn->query("
-CREATE TABLE IF NOT EXISTS shelter (
+CREATE TABLE IF NOT EXISTS shelters (
 
     shelter_id INT AUTO_INCREMENT PRIMARY KEY,
 
@@ -312,7 +310,7 @@ CREATE TABLE IF NOT EXISTS animal_shelter (
         ON DELETE CASCADE,
 
     FOREIGN KEY (shelter_id)
-        REFERENCES shelter(shelter_id)
+        REFERENCES shelters(shelter_id)
         ON DELETE CASCADE
 
 ) ENGINE=InnoDB
@@ -355,7 +353,11 @@ if ($result->num_rows == 0) {
     );
 
     $stmt->execute();
+
+    $stmt->close();
 }
+
+$check->close();
 
 ?>
 

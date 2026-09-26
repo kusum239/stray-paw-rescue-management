@@ -4,7 +4,6 @@ require_once "includes/auth.php";
 require_once "config/db.php";
 
 $user_id = $_SESSION["user_id"];
-
 $request_id = isset($_GET["id"]) ? intval($_GET["id"]) : 0;
 
 $stmt = $conn->prepare("
@@ -28,13 +27,16 @@ $request = $result->fetch_assoc();
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
 
-<title>Request Details | Stray Paw</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<link rel="stylesheet" href="assets/css/style.css">
+    <title>Request Details | Stray Paw</title>
+
+    <link rel="stylesheet" href="assets/css/style.css">
 
 </head>
 
@@ -44,75 +46,82 @@ $request = $result->fetch_assoc();
 
 <main class="container page-section">
 
-<h1>
-Rescue Request #RQ-<?= $request["request_id"] ?>
-</h1>
+    <h1>
+        Rescue Request #RQ-<?= htmlspecialchars($request["request_id"]) ?>
+    </h1>
 
-<br>
+    <br>
 
-<div class="form-card">
+    <div class="form-card">
 
-<p>
-<strong>Animal:</strong>
-<?= htmlspecialchars($request["animal_type"]) ?>
-</p>
+        <p>
+            <strong>Animal:</strong>
+            <?= htmlspecialchars($request["animal_type"]) ?>
+        </p>
 
-<p>
-<strong>Condition:</strong>
-<?= htmlspecialchars($request["condition_type"]) ?>
-</p>
+        <p>
+            <strong>Condition:</strong>
+            <?= htmlspecialchars($request["condition_type"]) ?>
+        </p>
 
-<p>
-<strong>Location:</strong>
-<?= htmlspecialchars($request["location"]) ?>
-</p>
+        <p>
+            <strong>Location:</strong>
+            <?= htmlspecialchars($request["location"]) ?>
+        </p>
 
-<p>
-<strong>Status:</strong>
-<?= htmlspecialchars($request["status"]) ?>
-</p>
+        <p>
+            <strong>Status:</strong>
+            <?= htmlspecialchars($request["status"]) ?>
+        </p>
 
-<p>
-<strong>Emergency:</strong>
-<?= htmlspecialchars($request["emergency"]) ?>
-</p>
+        <p>
+            <strong>Emergency:</strong>
+            <?= htmlspecialchars($request["emergency"]) ?>
+        </p>
 
-<br>
+        <br>
 
-<h3>Description</h3>
+        <h3>Description</h3>
 
-<p>
-<?= nl2br(htmlspecialchars($request["description"])) ?>
-</p>
+        <p>
+            <?= nl2br(htmlspecialchars($request["description"])) ?>
+        </p>
 
-<?php if (!empty($request["photo"])): ?>
 
-<br>
+        <?php if (!empty($request["photo"])): ?>
 
-<h3>Photo</h3>
+            <br>
 
-<img
-src="<?= htmlspecialchars($request["photo"]) ?>"
-alt="Request Photo"
-style="max-width:400px;border-radius:10px;">
+            <h3>Photo</h3>
 
-<?php endif; ?>
+            <img
+                src="/stray_paw/uploads/reports/<?= htmlspecialchars(basename($request["photo"])) ?>"
+                alt="Request Photo"
+                style="max-width:400px; border-radius:10px;">
 
-<?php if (!empty($request["video"])): ?>
+        <?php endif; ?>
 
-<br>
 
-<h3>Video</h3>
+        <?php if (!empty($request["video"])): ?>
 
-<video controls style="max-width:500px;">
+            <br>
 
-<source src="<?= htmlspecialchars($request["video"]) ?>">
+            <h3>Video</h3>
 
-</video>
+            <video
+                controls
+                style="max-width:500px; width:100%;">
 
-<?php endif; ?>
+                <source
+                    src="/stray_paw/uploads/reports/<?= htmlspecialchars(basename($request["video"])) ?>">
 
-</div>
+                Your browser does not support the video tag.
+
+            </video>
+
+        <?php endif; ?>
+
+    </div>
 
 </main>
 

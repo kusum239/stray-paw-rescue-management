@@ -54,7 +54,8 @@ $total_users      = getTableCount($conn, 'users');
 <div class="nav-bar">
     <div style="font-size: 1.2rem; font-weight: bold;">🐾 Stray Paw Admin</div>
     <div>
-        <a href="reports.php" style="color:white; text-decoration: underline;">Dashboard</a>
+         <a href="dashboard.php" style="color:white; text-decoration: underline;">Dashboard</a>
+        <a href="reports.php" style="color:white; text-decoration: underline;">Report</a>
         <a href="requests.php">Requests</a>
         <a href="animals.php">Animals</a>
         <a href="shelters.php">Shelters</a>
