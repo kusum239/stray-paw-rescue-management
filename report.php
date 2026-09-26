@@ -1,340 +1,483 @@
+```php
 <?php
-
 require_once "includes/auth.php";
 require_once "config/db.php";
 
+$user_id = $_SESSION["user_id"];
+
 $message = "";
-$error = "";
+$message_type = "";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
-    $user_id = $_SESSION["user_id"];
-
-    $animal_type = $_POST["animal_type"] ?? "";
-    $condition_type = $_POST["condition_type"] ?? "";
+    $animal_type = trim($_POST["animal_type"] ?? "");
+    $animal_condition = trim($_POST["condition_type"] ?? "");
     $description = trim($_POST["description"] ?? "");
     $location = trim($_POST["location"] ?? "");
     $emergency = $_POST["emergency"] ?? "No";
 
-    $photo_name = null;
-
-    if (
-        isset($_FILES["photo"]) &&
-        $_FILES["photo"]["error"] === 0
-    ) {
-
-        $allowed_images = [
-            "jpg",
-            "jpeg",
-            "png",
-            "webp"
-        ];
-
-        $extension = strtolower(
-            pathinfo(
-                $_FILES["photo"]["name"],
-                PATHINFO_EXTENSION
-            )
-        );
-
-        if (in_array($extension, $allowed_images)) {
-
-            $photo_name =
-                uniqid("photo_") . "." . $extension;
-
-            move_uploaded_file(
-                $_FILES["photo"]["tmp_name"],
-                "uploads/reports/" . $photo_name
-            );
-        }
-    }
-
-    $video_name = null;
-
-    if (
-        isset($_FILES["video"]) &&
-        $_FILES["video"]["error"] === 0
-    ) {
-
-        $allowed_videos = [
-            "mp4",
-            "webm",
-            "mov"
-        ];
-
-        $extension = strtolower(
-            pathinfo(
-                $_FILES["video"]["name"],
-                PATHINFO_EXTENSION
-            )
-        );
-
-        if (in_array($extension, $allowed_videos)) {
-
-            $video_name =
-                uniqid("video_") . "." . $extension;
-
-            move_uploaded_file(
-                $_FILES["video"]["tmp_name"],
-                "uploads/reports/" . $video_name
-            );
-        }
-    }
-
     if (
         empty($animal_type) ||
-        empty($condition_type) ||
+        empty($animal_condition) ||
         empty($description) ||
         empty($location)
     ) {
-
-        $error =
-            "Please fill in all required fields.";
-
+        $message = "Please fill in all required fields.";
+        $message_type = "error";
     } else {
 
-        $stmt = $conn->prepare("
-            INSERT INTO rescue_requests
-            (
-                user_id,
-                animal_type,
-                condition_type,
-                photo,
-                video,
-                description,
-                location,
-                emergency,
-                status,
-                created_at
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pending', NOW())
-        ");
+        $upload_dir = "uploads/reports/";
 
-        $stmt->bind_param(
-            "isssssss",
-            $user_id,
-            $animal_type,
-            $condition_type,
-            $photo_name,
-            $video_name,
-            $description,
-            $location,
-            $emergency
-        );
+        if (!is_dir($upload_dir)) {
+            mkdir($upload_dir, 0777, true);
+        }
 
-        if ($stmt->execute()) {
+        $image_name = "";
+        $video_name = "";
 
-            header("Location: dashboard.php");
-            exit();
+        if (
+            isset($_FILES["photo"]) &&
+            $_FILES["photo"]["error"] === UPLOAD_ERR_OK
+        ) {
 
-        } else {
+            $allowed_images = ["jpg", "jpeg", "png", "webp"];
 
-            $error =
-                "Unable to submit the request.";
+            $original_name = $_FILES["photo"]["name"];
+            $extension = strtolower(
+                pathinfo($original_name, PATHINFO_EXTENSION)
+            );
 
+            if (!in_array($extension, $allowed_images)) {
+                $message = "Invalid photo format.";
+                $message_type = "error";
+            } else {
+
+                $image_name = uniqid("image_", true) . "." . $extension;
+
+                move_uploaded_file(
+                    $_FILES["photo"]["tmp_name"],
+                    $upload_dir . $image_name
+                );
+            }
+        }
+
+        if (
+            empty($message) &&
+            isset($_FILES["video"]) &&
+            $_FILES["video"]["error"] === UPLOAD_ERR_OK
+        ) {
+
+            $allowed_videos = ["mp4", "webm", "mov"];
+
+            $original_name = $_FILES["video"]["name"];
+            $extension = strtolower(
+                pathinfo($original_name, PATHINFO_EXTENSION)
+            );
+
+            if (!in_array($extension, $allowed_videos)) {
+                $message = "Invalid video format.";
+                $message_type = "error";
+            } else {
+
+                $video_name = uniqid("video_", true) . "." . $extension;
+
+                move_uploaded_file(
+                    $_FILES["video"]["tmp_name"],
+                    $upload_dir . $video_name
+                );
+            }
+        }
+
+        if (empty($message)) {
+
+            $sql = "
+                INSERT INTO rescue_requests
+                (
+                    user_id,
+                    animal_type,
+                    animal_condition,
+                    description,
+                    location,
+                    emergency,
+                    image,
+                    video,
+                    status,
+                    created_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pending', NOW())
+            ";
+
+            $stmt = $conn->prepare($sql);
+
+            if (!$stmt) {
+                die("Database error: " . $conn->error);
+            }
+
+            $stmt->bind_param(
+                "isssssss",
+                $user_id,
+                $animal_type,
+                $animal_condition,
+                $description,
+                $location,
+                $emergency,
+                $image_name,
+                $video_name
+            );
+
+            if ($stmt->execute()) {
+
+                $stmt->close();
+
+                header("Location: dashboard.php?report=success");
+                exit;
+
+            } else {
+
+                $message = "Failed to submit the rescue request.";
+                $message_type = "error";
+
+                $stmt->close();
+            }
         }
     }
 }
-
 ?>
 
 <!DOCTYPE html>
-
 <html lang="en">
 
 <head>
 
-<meta charset="UTF-8">
+    <meta charset="UTF-8">
 
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-<title>
-Report an Animal | Stray Paw
-</title>
+    <title>Report an Animal | Stray Paw</title>
 
-<link rel="stylesheet"
-href="assets/css/style.css">
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            color: #222;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 750px;
+            margin: 40px auto;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        h1 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 15px;
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        input[type="file"] {
+            padding: 8px;
+        }
+
+        .required {
+            color: red;
+        }
+
+        .emergency-box {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .emergency-box label {
+            font-weight: normal;
+            margin: 0;
+        }
+
+        .emergency-box input {
+            width: auto;
+        }
+
+        button {
+            width: 100%;
+            padding: 13px;
+            border: none;
+            border-radius: 7px;
+            background: #2563eb;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        .message {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .info {
+            font-size: 13px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+    </style>
 
 </head>
 
 <body>
 
-<?php include "includes/header.php"; ?>
+<div class="container">
 
-<main class="container page-section">
+    <div class="card">
 
-<h1>
-Report a Stray or Injured Animal
-</h1>
+        <h1>Report an Animal</h1>
 
-<p style="color:#78716c;margin-bottom:25px;">
+        <p class="subtitle">
+            Submit the details of an animal that needs rescue.
+        </p>
 
-Your report goes directly to our rescue
-coordinators. Please provide accurate details.
+        <?php if (!empty($message)): ?>
 
-</p>
+            <div class="message <?php echo $message_type; ?>">
+                <?php echo htmlspecialchars($message); ?>
+            </div>
 
-<div class="form-card">
+        <?php endif; ?>
 
-<?php if ($error): ?>
+        <form
+            method="POST"
+            enctype="multipart/form-data"
+        >
 
-<p style="color:#bd645c;margin-bottom:20px;">
-<?= htmlspecialchars($error) ?>
-</p>
+            <div class="form-group">
 
-<?php endif; ?>
+                <label>
+                    Animal Type <span class="required">*</span>
+                </label>
 
-<form
-method="POST"
-enctype="multipart/form-data">
+                <select name="animal_type" required>
 
-<div class="form-group">
+                    <option value="">
+                        Select animal
+                    </option>
 
-<label>
-Animal Type *
-</label>
+                    <option value="Dog">
+                        Dog
+                    </option>
 
-<select
-name="animal_type"
-required>
+                    <option value="Cat">
+                        Cat
+                    </option>
 
-<option value="">
-Select animal
-</option>
+                    <option value="Other">
+                        Other
+                    </option>
 
-<option value="Dog">
-Dog
-</option>
+                </select>
 
-<option value="Cat">
-Cat
-</option>
+            </div>
 
-</select>
+            <div class="form-group">
+
+                <label>
+                    Animal Condition <span class="required">*</span>
+                </label>
+
+                <select name="condition_type" required>
+
+                    <option value="">
+                        Select condition
+                    </option>
+
+                    <option value="Injured">
+                        Injured
+                    </option>
+
+                    <option value="Sick">
+                        Sick
+                    </option>
+
+                    <option value="Abandoned">
+                        Abandoned
+                    </option>
+
+                    <option value="Trapped">
+                        Trapped
+                    </option>
+
+                    <option value="Homeless">
+                        Homeless
+                    </option>
+
+                    <option value="Other">
+                        Other
+                    </option>
+
+                </select>
+
+            </div>
+
+            <div class="form-group">
+
+                <label>
+                    Description <span class="required">*</span>
+                </label>
+
+                <textarea
+                    name="description"
+                    placeholder="Describe the animal's condition and situation..."
+                    required
+                ></textarea>
+
+            </div>
+
+            <div class="form-group">
+
+                <label>
+                    Location <span class="required">*</span>
+                </label>
+
+                <input
+                    type="text"
+                    name="location"
+                    placeholder="Where is the animal located?"
+                    required
+                >
+
+            </div>
+
+            <div class="form-group">
+
+                <label>
+                    Is this an emergency?
+                </label>
+
+                <div class="emergency-box">
+
+                    <label>
+                        <input
+                            type="radio"
+                            name="emergency"
+                            value="Yes"
+                        >
+                        Yes
+                    </label>
+
+                    <label>
+                        <input
+                            type="radio"
+                            name="emergency"
+                            value="No"
+                            checked
+                        >
+                        No
+                    </label>
+
+                </div>
+
+            </div>
+
+            <div class="form-group">
+
+                <label>
+                    Animal Photo
+                </label>
+
+                <input
+                    type="file"
+                    name="photo"
+                    accept=".jpg,.jpeg,.png,.webp"
+                >
+
+                <div class="info">
+                    Accepted: JPG, JPEG, PNG, WEBP
+                </div>
+
+            </div>
+
+            <div class="form-group">
+
+                <label>
+                    Animal Video
+                </label>
+
+                <input
+                    type="file"
+                    name="video"
+                    accept=".mp4,.webm,.mov"
+                >
+
+                <div class="info">
+                    Accepted: MP4, WEBM, MOV
+                </div>
+
+            </div>
+
+            <button type="submit">
+                Submit Rescue Request
+            </button>
+
+        </form>
+
+    </div>
 
 </div>
-
-<div class="form-group">
-
-<label>
-Condition *
-</label>
-
-<select
-name="condition_type"
-required>
-
-<option value="">
-Select condition
-</option>
-
-<option value="Injured">
-Injured
-</option>
-
-<option value="Stray">
-Stray
-</option>
-
-<option value="Abandoned">
-Abandoned
-</option>
-
-</select>
-
-</div>
-
-<div class="form-group">
-
-<label>
-Photo
-</label>
-
-<input
-type="file"
-name="photo"
-accept="image/*">
-
-</div>
-
-<div class="form-group">
-
-<label>
-Video
-</label>
-
-<input
-type="file"
-name="video"
-accept="video/*">
-
-</div>
-
-<div class="form-group">
-
-<label>
-Description *
-</label>
-
-<textarea
-name="description"
-placeholder="Describe the animal's condition, appearance, behavior, etc."
-required></textarea>
-
-</div>
-
-<div class="form-group">
-
-<label>
-Location *
-</label>
-
-<input
-type="text"
-name="location"
-placeholder="Enter street, area or nearby landmark"
-required>
-
-</div>
-
-<div class="form-group">
-
-<label>
-Immediate Danger?
-</label>
-
-<select
-name="emergency">
-
-<option value="No">
-No
-</option>
-
-<option value="Yes">
-Yes, it's an emergency
-</option>
-
-</select>
-
-</div>
-
-<button
-type="submit"
-class="btn">
-
-Submit Rescue Request
-
-</button>
-
-</form>
-
-</div>
-
-</main>
-
-<?php include "includes/footer.php"; ?>
 
 </body>
 
 </html>
+```
