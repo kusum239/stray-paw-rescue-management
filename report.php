@@ -1,4 +1,4 @@
-```php
+
 <?php
 require_once "includes/auth.php";
 require_once "config/db.php";
@@ -11,14 +11,14 @@ $message_type = "";
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     $animal_type = trim($_POST["animal_type"] ?? "");
-    $animal_condition = trim($_POST["condition_type"] ?? "");
+    $condition_type = trim($_POST["condition_type"] ?? "");
     $description = trim($_POST["description"] ?? "");
     $location = trim($_POST["location"] ?? "");
     $emergency = $_POST["emergency"] ?? "No";
 
     if (
         empty($animal_type) ||
-        empty($animal_condition) ||
+        empty($condition_type) ||
         empty($description) ||
         empty($location)
     ) {
@@ -95,11 +95,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 (
                     user_id,
                     animal_type,
-                    animal_condition,
+                    condition_type,
                     description,
                     location,
                     emergency,
-                    image,
+                    photo,
                     video,
                     status,
                     created_at
@@ -117,7 +117,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 "isssssss",
                 $user_id,
                 $animal_type,
-                $animal_condition,
+                $condition_type,
                 $description,
                 $location,
                 $emergency,
@@ -480,4 +480,4 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 </body>
 
 </html>
-```
+
