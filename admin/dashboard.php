@@ -11,6 +11,18 @@ if (!isset($_SESSION["admin_id"])) {
 
 $admin_name = $_SESSION["admin_name"] ?? "Admin";
 
+// Greeting & Date Logic
+$hour = (int)date('H');
+if ($hour < 12) {
+    $greeting = "Good Morning";
+} elseif ($hour < 17) {
+    $greeting = "Good Afternoon";
+} else {
+    $greeting = "Good Evening";
+}
+
+$current_date = date('l, M d, Y');
+
 $total_requests = 0;
 $pending_requests = 0;
 $total_treatments = 0;
@@ -196,6 +208,7 @@ if ($result) {
     width: calc(100% - 250px);
     min-height: 100vh;
     background: #faf9f7;
+    position: relative;
 }
 
 .admin-topbar {
@@ -248,8 +261,73 @@ if ($result) {
     font-size: 11px;
 }
 
+/* Floating Toast Notification */
+.greeting-toast {
+    position: fixed;
+    top: 25px;
+    right: 25px;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: #ffffff;
+    border: 1px solid #e9e2de;
+    border-left: 5px solid #bc6b72;
+    padding: 14px 20px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.greeting-toast.fade-out {
+    opacity: 0;
+    transform: translateY(-20px);
+}
+
+.greeting-toast i.toast-icon {
+    color: #bc6b72;
+    font-size: 20px;
+}
+
+.greeting-toast-content strong {
+    display: block;
+    color: #30262d;
+    font-size: 14px;
+}
+
+.greeting-toast-content span {
+    color: #918487;
+    font-size: 12px;
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    color: #b6a8ac;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 0 0 0 8px;
+    line-height: 1;
+}
+
+.toast-close:hover {
+    color: #30262d;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
 .dashboard-welcome {
-    margin: 30px 35px 25px;
+    margin: 25px 35px;
     padding: 28px 32px;
     border-radius: 14px;
     background: #f8e5e5;
@@ -296,7 +374,6 @@ if ($result) {
     padding: 0 35px;
 }
 
-/* Scoped specifically to dashboard stats links to prevent affecting other links */
 .dashboard-stats .stat-card-link {
     text-decoration: none;
     color: inherit;
@@ -571,6 +648,16 @@ if ($result) {
 
 <body>
 
+<!-- FLOATING 8-SECOND NOTIFICATION TOAST -->
+<div class="greeting-toast" id="greetingToast">
+    <i class="fa-solid fa-sun toast-icon"></i>
+    <div class="greeting-toast-content">
+        <strong><?= $greeting ?>, Amrita Kusum!</strong>
+        <span><?= $current_date ?></span>
+    </div>
+    <button class="toast-close" onclick="closeToast()">&times;</button>
+</div>
+
 <div class="admin-layout">
 
     <aside class="admin-sidebar">
@@ -651,7 +738,6 @@ if ($result) {
             </div>
         </section>
 
-        <!-- SAFE ISOLATED CLICKABLE CARDS -->
         <section class="dashboard-stats">
 
             <a href="requests.php" class="stat-card-link">
@@ -795,6 +881,19 @@ if ($result) {
     </main>
 
 </div>
+
+<script>
+// Auto-dismiss notification toast after 8 seconds (8000ms)
+function closeToast() {
+    const toast = document.getElementById('greetingToast');
+    if (toast) {
+        toast.classList.add('fade-out');
+        setTimeout(() => toast.remove(), 500);
+    }
+}
+
+setTimeout(closeToast, 8000);
+</script>
 
 </body>
 </html>
