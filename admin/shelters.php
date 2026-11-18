@@ -73,7 +73,7 @@ $total_shelters = count($shelters);
 <!-- Main Section -->
 <div class="card">
     <div class="header-actions">
-        <h2>Registered Shelters</h2>
+        <h2> Shelters</h2>
         <a href="add_shelter.php" class="btn-add">+ Add New Shelter</a>
     </div>
 

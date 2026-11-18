@@ -414,7 +414,7 @@
             every small action matters.
         </p>
 
-        <h3>Stray Paw – Because Every Life Matters. 🐾</h3>
+        <h3>Stray Paw – Because Every Life Matters.</h3>
 
     </section>
 
