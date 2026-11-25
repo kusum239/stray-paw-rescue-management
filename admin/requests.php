@@ -13,9 +13,6 @@ if (!isset($_SESSION['admin_id'])) {
 
 require_once "../config/db.php";
 
-/* --------------------------------
-   FIND PRIMARY ID COLUMN
---------------------------------- */
 $id_col = "id";
 
 $check_id = $conn->query("SHOW COLUMNS FROM rescue_requests LIKE 'request_id'");
@@ -24,9 +21,7 @@ if ($check_id && $check_id->num_rows > 0) {
     $id_col = "request_id";
 }
 
-/* --------------------------------
-   UPDATE STATUS
---------------------------------- */
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $request_id = intval($_POST['request_id'] ?? 0);
@@ -59,9 +54,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit();
 }
 
-/* --------------------------------
-   GET ALL REQUESTS
---------------------------------- */
+
+   //GET ALL REQUESTS//
 
 $requests = [];
 
@@ -287,10 +281,6 @@ while ($row = $result->fetch_assoc()) {
         <a href="requests.php"
            style="color:white;text-decoration:underline;">
             Requests
-        </a>
-
-        <a href="animals.php">
-            Animals
         </a>
 
         <a href="shelters.php">
