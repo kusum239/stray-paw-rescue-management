@@ -64,8 +64,7 @@ $total_shelters = count($shelters);
     <div>
         <a href="reports.php">Dashboard</a>
         <a href="requests.php">Requests</a>
-        <a href="animals.php">Animals</a>
-        <a href="shelters.php" style="color:white; text-decoration: underline;">Shelters</a>
+                <a href="shelters.php" style="color:white; text-decoration: underline;">Shelters</a>
         <a href="volunteers.php">Volunteers</a>
         <a href="../logout.php" style="color: #ff9999;">Logout</a>
     </div>

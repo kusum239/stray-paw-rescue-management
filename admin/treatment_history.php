@@ -59,8 +59,6 @@ $total_treatments = count($treatments);
         <nav style="display: flex; gap: 20px; align-items: center;">
             <a href="dashboard.php" style="color: #fff; text-decoration: none; font-size: 14px;">Dashboard</a>
             <a href="requests.php" style="color: #fff; text-decoration: none; font-size: 14px;">Requests</a>
-            <a href="animals.php" style="color: #fff; text-decoration: underline; font-weight: bold; font-size: 14px;">Animals</a>
-            <a href="shelters.php" style="color: #fff; text-decoration: none; font-size: 14px;">Shelters</a>
             <a href="volunteers.php" style="color: #fff; text-decoration: none; font-size: 14px;">Volunteers</a>
             <a href="logout.php" style="color: #ff8a8a; text-decoration: none; font-size: 14px;">Logout</a>
         </nav>
